@@ -2,10 +2,10 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import pandas as pd
 import numpy as np
-from scipy.sparse import csr_matrix
-from scipy.sparse.linalg import svds
 import os
 from urllib.parse import urlparse
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 # --- Optional: load .env next to this file (same vars as Next.js / seed script) ---
 try:
@@ -83,52 +83,166 @@ def load_interactions_dataframe():
     return df
 
 
-# Load your dataset and preprocess
-df = load_interactions_dataframe()
-df = df.groupby(["user_id", "prod_id"], as_index=False).agg({"rating": "mean"})
+def load_products_dataframe():
+    """
+    Load catalog metadata used for TF-IDF item similarity.
+    """
+    db = _mongo_db()
+    if db is None:
+        return pd.DataFrame(
+            columns=[
+                "prod_id",
+                "name",
+                "category",
+                "subcategory",
+                "brand",
+                "description",
+                "rating_avg",
+            ]
+        )
+    rows = list(
+        db["products"].find(
+            {},
+            {
+                "_id": 0,
+                "prodId": 1,
+                "name": 1,
+                "category": 1,
+                "subcategory": 1,
+                "brand": 1,
+                "description": 1,
+                "ratingAvg": 1,
+            },
+        )
+    )
+    if not rows:
+        return pd.DataFrame(
+            columns=[
+                "prod_id",
+                "name",
+                "category",
+                "subcategory",
+                "brand",
+                "description",
+                "rating_avg",
+            ]
+        )
+    pdf = pd.DataFrame(rows).rename(columns={"prodId": "prod_id", "ratingAvg": "rating_avg"})
+    pdf["prod_id"] = pdf["prod_id"].astype(str)
+    for col in ("name", "category", "subcategory", "brand", "description"):
+        pdf[col] = pdf[col].fillna("").astype(str)
+    pdf["rating_avg"] = pd.to_numeric(pdf.get("rating_avg", 0), errors="coerce").fillna(0)
+    return pdf
 
-# Preprocess data: Filter users with sufficient ratings
-counts = df["user_id"].value_counts()
-df_final = df[df["user_id"].isin(counts[counts >= 1].index)]
 
-# Create ratings matrix (users as rows, products as columns)
-final_ratings_matrix = df_final.pivot(index="user_id", columns="prod_id", values="rating").fillna(0)
+def build_recommender_artifacts():
+    interactions = load_interactions_dataframe()
+    interactions = interactions.groupby(["user_id", "prod_id"], as_index=False).agg({"rating": "mean"})
 
-# SVD requires 0 < k < min(rows, cols). With very few purchases (or 1xN / Nx1), skip SVD and use zeros — recommend_items still falls back to popularity.
-n_rows, n_cols = final_ratings_matrix.shape
-min_dim = min(n_rows, n_cols) if n_rows and n_cols else 0
-if min_dim < 2:
-    predicted_ratings = np.zeros((n_rows, n_cols), dtype=float)
-else:
-    final_ratings_matrix_sparse = csr_matrix(final_ratings_matrix.values)
-    k_value = min(50, min_dim - 1)
-    if k_value < 1:
-        predicted_ratings = np.zeros((n_rows, n_cols), dtype=float)
-    else:
-        U, sigma, Vt = svds(final_ratings_matrix_sparse, k=k_value)
-        sigma = np.diag(sigma)
-        predicted_ratings = np.dot(np.dot(U, sigma), Vt)
+    popularity = (
+        interactions.groupby("prod_id")
+        .agg(purchases=("rating", "count"), avg_rating=("rating", "mean"))
+        .sort_values(by=["purchases", "avg_rating"], ascending=[False, False])
+    )
 
-predicted_ratings_df = pd.DataFrame(
-    predicted_ratings,
-    index=final_ratings_matrix.index,
-    columns=final_ratings_matrix.columns,
-)
+    products = load_products_dataframe()
+    if products.empty:
+        return {
+            "interactions": interactions,
+            "popularity": popularity,
+            "products": products,
+            "prod_ids": [],
+            "prod_to_idx": {},
+            "cosine": np.zeros((0, 0), dtype=float),
+        }
+
+    products = products.drop_duplicates(subset="prod_id").reset_index(drop=True)
+    corpus = (
+        products["name"]
+        + " "
+        + products["category"]
+        + " "
+        + products["subcategory"]
+        + " "
+        + products["brand"]
+        + " "
+        + products["description"]
+    ).str.lower()
+
+    vectorizer = TfidfVectorizer(stop_words="english", ngram_range=(1, 2))
+    tfidf_matrix = vectorizer.fit_transform(corpus)
+    cosine = cosine_similarity(tfidf_matrix, dense_output=False)
+
+    prod_ids = products["prod_id"].tolist()
+    prod_to_idx = {pid: i for i, pid in enumerate(prod_ids)}
+    return {
+        "interactions": interactions,
+        "popularity": popularity,
+        "products": products,
+        "prod_ids": prod_ids,
+        "prod_to_idx": prod_to_idx,
+        "cosine": cosine,
+    }
 
 
-# Recommendation function: Returns top N recommended products for a user
+def _popular_items(popularity_df, top_n=5, exclude=None):
+    exclude = exclude or set()
+    ids = [pid for pid in popularity_df.index.tolist() if pid not in exclude]
+    return ids[:top_n]
+
+
 def recommend_items(user_id, top_n=5):
-    if user_id not in predicted_ratings_df.index:
-        # If the user is not in the predicted ratings matrix, return top N popular items based on average rating
-        popular_items = df.groupby("prod_id").agg({"rating": "mean"}).sort_values(by="rating", ascending=False).head(top_n)
-        return popular_items.index.tolist()
+    """
+    Personalized recommendations using TF-IDF + cosine item similarity.
+    If user has no history, fallback to popular items.
+    """
+    artifacts = build_recommender_artifacts()
+    interactions = artifacts["interactions"]
+    popularity = artifacts["popularity"]
+    prod_ids = artifacts["prod_ids"]
+    prod_to_idx = artifacts["prod_to_idx"]
+    cosine = artifacts["cosine"]
 
-    user_index = list(final_ratings_matrix.index).index(user_id)
-    user_predicted_ratings = predicted_ratings_df.iloc[user_index].sort_values(ascending=False)
+    user_rows = interactions[interactions["user_id"] == str(user_id)]
+    if user_rows.empty:
+        fallback_ids = _popular_items(popularity, top_n=top_n)
+        return [(pid, float(popularity.loc[pid, "avg_rating"])) for pid in fallback_ids]
 
-    # Return top N recommended products
-    recommended_products = user_predicted_ratings.head(top_n).index.tolist()
-    return recommended_products
+    purchased = set(user_rows["prod_id"].astype(str).tolist())
+    scores = {}
+
+    for _, row in user_rows.iterrows():
+        pid = str(row["prod_id"])
+        if pid not in prod_to_idx:
+            continue
+        item_idx = prod_to_idx[pid]
+        rating_weight = float(row["rating"])
+        sim_row = cosine.getrow(item_idx)
+        for neighbor_idx, sim in zip(sim_row.indices, sim_row.data):
+            candidate_pid = prod_ids[int(neighbor_idx)]
+            if candidate_pid in purchased:
+                continue
+            weighted = float(sim) * rating_weight
+            if weighted <= 0:
+                continue
+            scores[candidate_pid] = scores.get(candidate_pid, 0.0) + weighted
+
+    ranked = sorted(scores.items(), key=lambda kv: kv[1], reverse=True)
+    chosen = ranked[:top_n]
+    chosen_ids = {pid for pid, _ in chosen}
+
+    if len(chosen) < top_n:
+        needed = top_n - len(chosen)
+        fill_ids = _popular_items(popularity, top_n=needed + len(chosen_ids), exclude=purchased | chosen_ids)
+        for pid in fill_ids:
+            if pid in chosen_ids:
+                continue
+            base = float(popularity.loc[pid, "avg_rating"]) if pid in popularity.index else 0.0
+            chosen.append((pid, base))
+            chosen_ids.add(pid)
+            if len(chosen) >= top_n:
+                break
+    return chosen
 
 
 def _products_by_prod_ids(prod_ids):
@@ -160,13 +274,10 @@ def recommend():
 
     try:
         recommendations = recommend_items(user_id)
-
-        # Baseline join from interaction history (name may be missing for cold pool)
-        recommended_products = df[df["prod_id"].isin(recommendations)].drop_duplicates(subset="prod_id")
-        product_details = recommended_products[["prod_id", "rating"]].to_dict(orient="records")
+        product_details = [{"prod_id": pid, "rating": score} for pid, score in recommendations]
 
         # Merge Mongo catalog fields for UI (does not change recommendation logic)
-        mongo_rows = _products_by_prod_ids(recommendations)
+        mongo_rows = _products_by_prod_ids([pid for pid, _ in recommendations])
         by_pid = {row["prodId"]: row for row in mongo_rows}
         for row in product_details:
             pid = row["prod_id"]
