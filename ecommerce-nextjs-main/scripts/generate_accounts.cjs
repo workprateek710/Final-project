@@ -6,6 +6,11 @@ const bcrypt = require("bcryptjs");
 
 const TARGET_NEW_USERS = 97;
 const PASSWORD = "12345678";
+const FIRST_NAMES = ["Avery", "Jordan", "Taylor", "Morgan", "Casey", "Riley", "Quinn", "Jamie"];
+const LAST_NAMES = ["Johnson", "Lee", "Patel", "Garcia", "Brown", "Smith", "Kim", "Nguyen"];
+const STREETS = ["Maple Ave", "Cedar St", "Oak Drive", "Pine Lane", "Sunset Blvd", "Lakeview Rd"];
+const CITIES = ["Los Angeles", "San Diego", "San Jose", "Sacramento", "Irvine", "Fresno"];
+const CARD_TYPES = ["visa", "mastercard", "amex"];
 
 function parseEnv(text) {
   const out = {};
@@ -55,6 +60,33 @@ function indexToName(idx) {
 
 function randomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function pick(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function makeAddress(name) {
+  return {
+    label: "Home",
+    name,
+    address: `${randomInt(100, 9999)} ${pick(STREETS)}`,
+    city: pick(CITIES),
+    zip: String(randomInt(90001, 96162)),
+    country: "USA",
+  };
+}
+
+function makePayment() {
+  const cardType = pick(CARD_TYPES);
+  const last4 = String(randomInt(1000, 9999));
+  return {
+    label: `${cardType.toUpperCase()} ${last4}`,
+    cardholderName: `${pick(FIRST_NAMES)} ${pick(LAST_NAMES)}`,
+    cardLast4: last4,
+    expiry: `${String(randomInt(1, 12)).padStart(2, "0")}/${randomInt(27, 31)}`,
+    cardType,
+  };
 }
 
 function pickMany(arr, count) {
@@ -112,8 +144,8 @@ async function main() {
       city: "",
       zip: "",
       country: "",
-      savedAddresses: [],
-      savedPayments: [],
+      savedAddresses: [makeAddress(name)],
+      savedPayments: [makePayment()],
       createdAt: now,
       updatedAt: now,
     });
