@@ -9,6 +9,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const registered = searchParams.get("registered");
+  const redirectTo = searchParams.get("redirect") || "/";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -23,7 +24,7 @@ function LoginForm() {
         email: email.trim().toLowerCase(),
         password,
         redirect: false,
-        callbackUrl: "/",
+        callbackUrl: redirectTo,
       });
       if (res?.error) {
         setError("Invalid email or password.");
@@ -34,7 +35,7 @@ function LoginForm() {
       if (typeof window !== "undefined") {
         localStorage.setItem("user", uid);
       }
-      router.push("/");
+      router.push(redirectTo);
       router.refresh();
     } finally {
       setLoading(false);
@@ -55,6 +56,15 @@ function LoginForm() {
             <p className="text-sm text-center text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-lg py-2 px-3">
               Account created — you can sign in now.
             </p>
+          )}
+
+          {redirectTo === "/checkout" && !registered && (
+            <div className="text-sm text-center text-amber-800 bg-amber-50 border border-amber-100 rounded-lg py-2 px-3">
+              Please sign in to complete your purchase.{" "}
+              <a href="/signup?redirect=/checkout" className="font-semibold underline">
+                Create account
+              </a>
+            </div>
           )}
 
           <form onSubmit={submit} className="space-y-4">

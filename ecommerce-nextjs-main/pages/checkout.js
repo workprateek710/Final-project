@@ -26,10 +26,17 @@ const CheckoutContent = () => {
   const [step, setStep] = useState(1);
   const [isMounted, setIsMounted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
   const products = useSelector((state) => state.cartReducer);
 
   useEffect(() => {
     setIsMounted(true);
+    const user = typeof window !== "undefined" ? localStorage.getItem("user") : null;
+    if (!user) {
+      window.location.href = "/login?redirect=/checkout";
+      return;
+    }
+    setAuthChecked(true);
   }, []);
 
   const getTotal = () => products.reduce((total, item) => total + item.price * item.quantity, 0);
@@ -72,7 +79,7 @@ const CheckoutContent = () => {
     }
   };
 
-  if (!isMounted) return null;
+  if (!isMounted || !authChecked) return null;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex flex-col">

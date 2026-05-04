@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState, Suspense } from "react";
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect") || "/";
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,7 +29,8 @@ export default function SignupPage() {
         setError(data.message || "Could not create account.");
         return;
       }
-      router.push("/login?registered=1");
+      const redirectParam = redirectTo !== "/" ? `&redirect=${encodeURIComponent(redirectTo)}` : "";
+      router.push(`/login?registered=1${redirectParam}`);
     } catch {
       setError("Network error. Try again.");
     } finally {
@@ -105,12 +108,23 @@ export default function SignupPage() {
 
           <p className="text-center text-sm text-slate-500">
             Already have an account?{" "}
-            <Link href="/login" className="font-semibold text-slate-900 hover:underline">
+            <Link
+              href={redirectTo !== "/" ? `/login?redirect=${encodeURIComponent(redirectTo)}` : "/login"}
+              className="font-semibold text-slate-900 hover:underline"
+            >
               Sign in
             </Link>
           </p>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<div className="min-h-[40vh] bg-slate-50" />}>
+      <SignupForm />
+    </Suspense>
   );
 }

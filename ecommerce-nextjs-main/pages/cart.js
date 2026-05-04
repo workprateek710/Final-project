@@ -9,67 +9,78 @@ import Link from "next/link";
 import "../src/app/globals.css";
 
 const CartPage = () => {
-  // Retrieve the cart products from the Redux store
   const products = useSelector((state) => state.cartReducer);
-
-  // State to track if the component has mounted
   const [isMounted, setIsMounted] = useState(false);
-
-  // State to toggle cart visibility
   const [showCart, setShowCart] = useState(false);
 
   useEffect(() => {
-    // Set the mounted state to true once the component has mounted
     setIsMounted(true);
   }, []);
 
-  // Calculate the total cost of items in the cart
-  const getTotal = () => {
-    return products.reduce((total, item) => total + item.price * item.quantity, 0);
+  const getTotal = () =>
+    products.reduce((total, item) => total + item.price * item.quantity, 0);
+
+  const handleCheckout = () => {
+    const user = typeof window !== "undefined" ? localStorage.getItem("user") : null;
+    if (!user) {
+      window.location.href = "/login?redirect=/checkout";
+    } else {
+      window.location.href = "/checkout";
+    }
   };
 
-  // Prevent rendering until the component has mounted
   if (!isMounted) return null;
 
   return (
-    <div className="page-wrapper">
-      {/* Navbar Component with setShowCart passed as a prop */}
+    <div className="min-h-screen bg-slate-50 flex flex-col">
       <Navbar setShowCart={setShowCart} />
 
-      {/* Main Cart Content */}
-      <main className="container mx-auto p-6">
-        <h1 className="text-2xl font-bold mb-6">Your Cart</h1>
+      <main className="flex-1 container py-10 max-w-2xl">
+        <h1 className="text-2xl font-bold text-slate-900 mb-6">Your Cart</h1>
 
         {products.length > 0 ? (
-          <div className="space-y-4">
-            {products.map((item) => (
-              <CartProduct
-                key={item.id}
-                id={item.id}
-                img={item.img}
-                title={item.title}
-                price={item.price}
-                quantity={item.quantity}
-              />
-            ))}
-
-            <div className="flex justify-between items-center mt-6 font-medium text-lg">
-              <p>Total:</p>
-              <p>${getTotal()}.00</p>
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+            <div className="divide-y divide-slate-100">
+              {products.map((item) => (
+                <div key={item.id} className="p-4">
+                  <CartProduct
+                    id={item.id}
+                    img={item.img}
+                    title={item.title}
+                    price={item.price}
+                    quantity={item.quantity}
+                  />
+                </div>
+              ))}
             </div>
 
-            <Link href="/checkout">
-              <button className="bg-black text-white w-full py-2 rounded-lg mt-4">
-                Proceed to Checkout
+            <div className="p-6 border-t border-slate-100 bg-slate-50/50">
+              <div className="flex justify-between items-center mb-4">
+                <span className="text-slate-600 font-medium">Subtotal</span>
+                <span className="text-xl font-bold text-slate-900">${getTotal().toFixed(2)}</span>
+              </div>
+              <button
+                onClick={handleCheckout}
+                className="w-full py-3.5 rounded-xl bg-accent text-white font-semibold hover:bg-blue-600 transition shadow-lg shadow-accent/25"
+              >
+                Proceed to checkout
               </button>
-            </Link>
+              <Link href="/shop" className="block text-center text-sm text-slate-500 hover:text-accent mt-3 transition">
+                Continue shopping
+              </Link>
+            </div>
           </div>
         ) : (
-          <p>Your cart is empty.</p>
+          <div className="text-center py-20 bg-white rounded-2xl border border-slate-100">
+            <p className="text-5xl mb-4">🛒</p>
+            <p className="text-slate-600 font-medium mb-4">Your cart is empty</p>
+            <Link href="/shop" className="inline-flex items-center justify-center rounded-xl bg-accent text-white px-6 py-2.5 text-sm font-semibold hover:bg-blue-600 transition">
+              Browse products
+            </Link>
+          </div>
         )}
       </main>
 
-      {/* Footer Component */}
       <Footer />
     </div>
   );

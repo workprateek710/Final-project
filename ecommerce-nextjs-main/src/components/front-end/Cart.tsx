@@ -96,11 +96,16 @@ const Cart = ({ setShowCart }: PropsType) => {
                   View cart
                 </button>
               </Link>
-              <Link href="/checkout" onClick={() => setShowCart(false)}>
-                <button className="w-full rounded-xl bg-accent text-white py-3 font-semibold text-sm hover:bg-blue-600 transition shadow-lg shadow-accent/25">
-                  Checkout
-                </button>
-              </Link>
+              <button
+                className="w-full rounded-xl bg-accent text-white py-3 font-semibold text-sm hover:bg-blue-600 transition shadow-lg shadow-accent/25"
+                onClick={() => {
+                  setShowCart(false);
+                  const user = typeof window !== "undefined" ? localStorage.getItem("user") : null;
+                  window.location.href = user ? "/checkout" : "/login?redirect=/checkout";
+                }}
+              >
+                Checkout
+              </button>
             </div>
           </div>
         )}
