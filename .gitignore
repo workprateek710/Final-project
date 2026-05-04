@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Next.js
+**/.next/
+**/out/
+
+# Local env (never commit secrets)
+.env
+.env.local
+.env.*.local
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+*.log
+.vercel
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Misc
+*.tsbuildinfo

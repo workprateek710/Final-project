@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles */
+th,
+td {
+  border-bottom: 1px solid #ececec;
+  padding: 8px;
+  text-align: left;
+}
+
+.loader {
+  width: 48px;
+  height: 48px;
+  border: 5px solid #FFF;
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  display: inline-block;
+  box-sizing: border-box;
+  animation: rotation 1s linear infinite;
+}
+
+@keyframes rotation {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Product Card Styling */
+.product-card {
+  @apply p-4 bg-white shadow-lg rounded-lg transition-transform transform hover:-translate-y-2 hover:shadow-xl;
+}
+
+.product-card img {
+  @apply w-full h-40 object-cover rounded-md;
+}
+
+.product-card .product-name {
+  @apply text-lg font-semibold text-gray-800 mt-2;
+}
+
+.product-card .product-rating {
+  @apply text-sm text-red-500;
+}
+
+.product-card .product-price {
+  @apply text-sm text-gray-600 mt-1;
+}
+
+/* Button Styles */
+.btn-primary {
+  @apply bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition;
+}
+
+.btn-secondary {
+  @apply bg-gray-100 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-200 transition;
+}
+
+/* Loading State */
+.loading-container {
+  @apply flex justify-center items-center h-40;
+}
+
+.no-data {
+  @apply text-gray-500 text-sm text-center mt-4;
+}
+
+/* Recommended Section */
+.recommended-container {
+  @apply bg-gray-50 py-6 px-4 rounded-lg shadow-inner mt-6;
+}
+
+.recommended-header {
+  @apply text-xl font-semibold text-gray-700 mb-4;
+}
+
+.recommended-grid {
+  @apply grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4;
+}

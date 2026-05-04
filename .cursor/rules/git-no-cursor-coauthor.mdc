@@ -1,0 +1,14 @@
+---
+description: Never add Cursor as a git co-author on commits
+alwaysApply: true
+---
+
+# Git commits — no Cursor co-author
+
+When staging or committing in this repo:
+
+- Do **not** pass `--trailer "Co-authored-by: Cursor <cursoragent@cursor.com>"` or any similar `Co-authored-by` trailer for Cursor.
+- Use a plain commit only, for example: `git commit -m "your message"`.
+- Do not suggest or document commands that include Cursor co-author trailers.
+
+The repository uses `.githooks/prepare-commit-msg` (via `git config core.hooksPath .githooks`) to strip accidental Cursor co-author lines from the commit message file.

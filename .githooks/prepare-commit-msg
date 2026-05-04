@@ -1,0 +1,5 @@
+#!/bin/sh
+# Removes Cursor-injected co-author lines so commits stay attributed only to your git user.
+msg_file="$1"
+[ -n "$msg_file" ] && [ -f "$msg_file" ] || exit 0
+grep -viE 'Co-authored-by:.*[Cc]ursor|cursoragent@cursor\.com' "$msg_file" >"$msg_file.$$" && mv "$msg_file.$$" "$msg_file"
