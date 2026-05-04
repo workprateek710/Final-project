@@ -7,6 +7,7 @@ import { BsSearch } from "react-icons/bs";
 import { addToCart } from "@/redux/features/cartSlice";
 import Link from "next/link";
 import type { CatalogProduct } from "@/types/product";
+import { ELECTRONICS_SUBCATEGORIES } from "@/constants/productCategories";
 
 type NavbarProduct = {
   id: string;
@@ -241,7 +242,7 @@ const Navbar = ({ setShowCart }: { setShowCart: Dispatch<SetStateAction<boolean>
                 <div className="flex items-center gap-2">
                   <Link
                     href="/login"
-                    className="text-sm font-semibold text-slate-700 hover:text-accent px-2"
+                    className="rounded-xl bg-accent px-5 py-3 text-base font-bold text-white shadow-lg shadow-blue-500/20 transition hover:bg-blue-600"
                   >
                     Sign in
                   </Link>
@@ -293,22 +294,51 @@ const Navbar = ({ setShowCart }: { setShowCart: Dispatch<SetStateAction<boolean>
 
         {/* z-50: search dropdown (z-40) can grow tall and overlap this row; keep nav links clickable */}
         <div className="relative z-50 pt-3 pb-2">
-          <nav className="flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium">
+          <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-medium">
             <Link href="/" className="text-slate-600 hover:text-accent">
               Home
             </Link>
-            <Link href="/shop" className="text-slate-600 hover:text-accent">
-              Shop
+            <Link href="/shop" className="text-base font-bold text-slate-900 hover:text-accent md:text-lg">
+              All Products
             </Link>
-            <Link href="/shop?subcategory=Phones" className="text-slate-600 hover:text-accent">
-              Phones
-            </Link>
-            <Link href="/shop?subcategory=Laptops" className="text-slate-600 hover:text-accent">
-              Laptops
-            </Link>
-            <Link href="/shop?subcategory=Audio" className="text-slate-600 hover:text-accent">
-              Audio
-            </Link>
+            <details className="group relative">
+              <summary className="list-none cursor-pointer text-slate-600 hover:text-accent">
+                Categories
+              </summary>
+              <div className="absolute left-0 top-full z-50 mt-2 grid w-56 grid-cols-1 gap-1 rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
+                {ELECTRONICS_SUBCATEGORIES.filter((category) => category !== "General").map((category) => (
+                  <Link
+                    key={category}
+                    href={`/shop?subcategory=${encodeURIComponent(category)}`}
+                    className="rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-accent"
+                  >
+                    {category}
+                  </Link>
+                ))}
+              </div>
+            </details>
+            <details className="group relative">
+              <summary className="list-none cursor-pointer text-slate-600 hover:text-accent">
+                Filters
+              </summary>
+              <div className="absolute left-0 top-full z-50 mt-2 grid w-56 grid-cols-1 gap-1 rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
+                <Link href="/shop?sort=popular" className="rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-accent">
+                  Most purchased
+                </Link>
+                <Link href="/shop?sort=reviews" className="rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-accent">
+                  Most reviewed
+                </Link>
+                <Link href="/shop?sort=rating" className="rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-accent">
+                  Highest rated
+                </Link>
+                <Link href="/shop?sort=price-low" className="rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-accent">
+                  Price: low to high
+                </Link>
+                <Link href="/shop?sort=price-high" className="rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-accent">
+                  Price: high to low
+                </Link>
+              </div>
+            </details>
             <Link href="/checkout" className="text-slate-600 hover:text-accent">
               Checkout
             </Link>
