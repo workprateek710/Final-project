@@ -30,43 +30,99 @@ export default async function ProductDetailPage({ params }: Props) {
   if (!doc) notFound();
 
   const priceNum = Number.parseFloat(String(doc.price)) || 0;
+  const rating = doc.ratingAvg ?? 4.5;
+  const stars = Math.round(rating);
 
   return (
-    <div className="container py-10 grid gap-10 lg:grid-cols-2">
-      <div className="relative h-80 lg:h-[420px] bg-gray-50 rounded-xl border border-gray-100">
-        <Image
-          src={doc.imgSrc as string}
-          alt={doc.name as string}
-          fill
-          className="object-contain p-6"
-          priority
-          sizes="(max-width:1024px) 100vw, 50vw"
-        />
-      </div>
-      <div>
-        <p className="text-sm text-gray-500 uppercase tracking-wide">
-          {(doc.subcategory as string) || "Electronics"} · {doc.brand as string}
-        </p>
-        <h1 className="text-3xl font-bold mt-2">{doc.name as string}</h1>
-        <p className="text-2xl font-semibold text-accent mt-4">${doc.price as string}</p>
-        <p className="text-sm text-gray-600 mt-2">
-          ★ {(doc.ratingAvg as number)?.toFixed(1) ?? "4.5"} · {doc.reviews as number} reviews ·{" "}
-          {doc.stock as number} in stock
-        </p>
-        <p className="mt-6 text-gray-700 leading-relaxed">{doc.description as string}</p>
-        <div className="mt-8 flex flex-wrap gap-4 items-center">
-          <AddToCartButton
-            prodId={doc.prodId as string}
-            name={doc.name as string}
-            imgSrc={doc.imgSrc as string}
-            price={priceNum}
-            label="Add to cart"
-          />
-          <Link href="/shop" className="text-sm text-blue-600 hover:underline">
-            ← Back to shop
-          </Link>
+    <div className="bg-slate-50 min-h-screen">
+      {/* breadcrumb */}
+      <div className="bg-white border-b border-slate-100">
+        <div className="container py-3 flex items-center gap-2 text-sm text-slate-500">
+          <Link href="/" className="hover:text-accent transition">Home</Link>
+          <span>/</span>
+          <Link href="/shop" className="hover:text-accent transition">Shop</Link>
+          {doc.subcategory && (
+            <>
+              <span>/</span>
+              <Link href={`/shop?subcategory=${encodeURIComponent(doc.subcategory)}`} className="hover:text-accent transition">
+                {doc.subcategory}
+              </Link>
+            </>
+          )}
+          <span>/</span>
+          <span className="text-slate-900 font-medium truncate max-w-[200px]">{doc.name}</span>
         </div>
-        <p className="text-xs text-gray-400 mt-8">Catalog id: {doc.prodId as string}</p>
+      </div>
+
+      <div className="container py-10">
+        <div className="grid gap-10 lg:grid-cols-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-8">
+          {/* image */}
+          <div className="relative h-80 lg:h-[460px] bg-slate-50 rounded-2xl border border-slate-100 overflow-hidden">
+            <Image
+              src={doc.imgSrc}
+              alt={doc.name}
+              fill
+              className="object-contain p-8"
+              priority
+              sizes="(max-width:1024px) 100vw, 50vw"
+            />
+          </div>
+
+          {/* details */}
+          <div className="flex flex-col justify-center">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-accent bg-accent/8 px-3 py-1 rounded-full">
+                {doc.subcategory || "Electronics"}
+              </span>
+              {doc.brand && (
+                <span className="text-xs text-slate-500 font-medium">{doc.brand}</span>
+              )}
+            </div>
+
+            <h1 className="text-3xl font-bold text-slate-900 leading-snug">{doc.name}</h1>
+
+            {/* rating */}
+            <div className="flex items-center gap-2 mt-3">
+              <div className="flex text-amber-400 text-sm">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <span key={i} className={i < stars ? "opacity-100" : "opacity-25"}>★</span>
+                ))}
+              </div>
+              <span className="text-slate-600 text-sm">
+                {rating.toFixed(1)} · {doc.reviews} reviews
+              </span>
+            </div>
+
+            <div className="flex items-baseline gap-3 mt-5">
+              <span className="text-4xl font-extrabold text-slate-900">${doc.price}</span>
+            </div>
+
+            {doc.stock !== undefined && (
+              <p className={`text-sm mt-2 font-medium ${doc.stock > 10 ? "text-emerald-600" : doc.stock > 0 ? "text-amber-600" : "text-red-500"}`}>
+                {doc.stock > 10 ? `✓ In stock (${doc.stock} units)` : doc.stock > 0 ? `⚠ Only ${doc.stock} left` : "Out of stock"}
+              </p>
+            )}
+
+            <p className="mt-6 text-slate-600 leading-relaxed border-t border-slate-100 pt-6">
+              {doc.description}
+            </p>
+
+            <div className="mt-8 flex flex-wrap gap-3 items-center">
+              <AddToCartButton
+                prodId={doc.prodId}
+                name={doc.name}
+                imgSrc={doc.imgSrc}
+                price={priceNum}
+                label="Add to cart"
+              />
+              <Link href="/shop" className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-accent transition font-medium">
+                ← Back to shop
+              </Link>
+            </div>
+
+            <p className="text-xs text-slate-300 mt-8 font-mono">ID: {doc.prodId}</p>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -7,6 +7,12 @@ export const dynamic = "force-dynamic";
 
 type Props = { searchParams: Promise<{ subcategory?: string }> | { subcategory?: string } };
 
+const SUBCATEGORIES = [
+  "Phones", "Laptops", "Audio", "Tablets", "TV",
+  "Gaming", "Accessories", "Monitors", "Storage",
+  "Cameras", "Wearables", "Smart home",
+];
+
 export default async function ShopPage({ searchParams }: Props) {
   const sp = await Promise.resolve(searchParams);
   const subcategory = sp?.subcategory;
@@ -27,50 +33,65 @@ export default async function ShopPage({ searchParams }: Props) {
     reviews: doc.reviews as number | undefined,
   }));
 
-  const subs = ["Phones", "Laptops", "Audio", "Tablets", "TV", "Gaming", "Accessories", "Monitors"];
-
   return (
-    <div className="container py-10">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Electronics shop</h1>
-        <p className="text-gray-600 mt-2 max-w-2xl">
-          Browse in-stock devices. Cart & checkout write to MongoDB so the
-          recommender can learn from real (demo) purchase signals.
-        </p>
-      </header>
-
-      <div className="flex flex-wrap gap-2 mb-8">
-        <Link
-          href="/shop"
-          className={`px-3 py-1 rounded-full border text-sm ${!subcategory ? "bg-black text-white border-black" : "border-gray-300"}`}
-        >
-          All electronics
-        </Link>
-        {subs.map((s) => (
-          <Link
-            key={s}
-            href={`/shop?subcategory=${encodeURIComponent(s)}`}
-            className={`px-3 py-1 rounded-full border text-sm ${
-              subcategory === s ? "bg-black text-white border-black" : "border-gray-300"
-            }`}
-          >
-            {s}
-          </Link>
-        ))}
+    <div className="bg-slate-50 min-h-screen">
+      {/* page header */}
+      <div className="bg-white border-b border-slate-100">
+        <div className="container py-8">
+          <h1 className="text-3xl font-bold text-slate-900">
+            {subcategory ? subcategory : "All Electronics"}
+          </h1>
+          <p className="text-slate-500 mt-1 text-sm">
+            {items.length} product{items.length !== 1 ? "s" : ""} available
+          </p>
+        </div>
       </div>
 
-      {items.length === 0 ? (
-        <p className="text-gray-500">
-          No products found. Run <code className="bg-gray-100 px-1">npm run db:seed</code> after
-          setting <code className="bg-gray-100 px-1">MONGO_URI</code>.
-        </p>
-      ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {items.map((p) => (
-            <ProductTile key={p.prodId} p={p} />
+      <div className="container py-8">
+        {/* filter pills */}
+        <div className="flex flex-wrap gap-2 mb-8">
+          <Link
+            href="/shop"
+            className={`px-4 py-2 rounded-full text-sm font-medium transition border ${
+              !subcategory
+                ? "bg-slate-900 text-white border-slate-900"
+                : "bg-white text-slate-600 border-slate-200 hover:border-slate-400"
+            }`}
+          >
+            All
+          </Link>
+          {SUBCATEGORIES.map((s) => (
+            <Link
+              key={s}
+              href={`/shop?subcategory=${encodeURIComponent(s)}`}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition border ${
+                subcategory === s
+                  ? "bg-accent text-white border-accent"
+                  : "bg-white text-slate-600 border-slate-200 hover:border-accent hover:text-accent"
+              }`}
+            >
+              {s}
+            </Link>
           ))}
         </div>
-      )}
+
+        {/* grid */}
+        {items.length === 0 ? (
+          <div className="text-center py-20">
+            <p className="text-5xl mb-4">📦</p>
+            <p className="text-slate-600 font-medium">No products found in this category.</p>
+            <Link href="/shop" className="text-accent text-sm mt-2 inline-block hover:underline">
+              Browse all electronics
+            </Link>
+          </div>
+        ) : (
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {items.map((p) => (
+              <ProductTile key={p.prodId} p={p} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

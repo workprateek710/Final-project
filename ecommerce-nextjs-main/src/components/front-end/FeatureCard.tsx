@@ -6,11 +6,13 @@ interface PropsType {
 
 const FeatureCard = ({ icon, title, desc }: PropsType) => {
   return (
-    <div className="flex gap-2 bg-gray-100 px-4 py-6">
-      {icon}
+    <div className="flex items-start gap-4 p-6 bg-white rounded-2xl border border-slate-100 hover:border-accent/20 hover:shadow-md transition group">
+      <div className="shrink-0 w-12 h-12 rounded-xl bg-accent/8 text-accent flex items-center justify-center text-2xl group-hover:bg-accent group-hover:text-white transition">
+        {icon}
+      </div>
       <div>
-        <h2 className="font-medium text-xl">{title}</h2>
-        <p className="text-gray-600">{desc}</p>
+        <h3 className="font-semibold text-slate-900">{title}</h3>
+        <p className="text-slate-500 text-sm mt-0.5">{desc}</p>
       </div>
     </div>
   );

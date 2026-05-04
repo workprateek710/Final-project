@@ -1,78 +1,66 @@
+import Link from "next/link";
+
 const Footer = () => {
   return (
-    <div className="bg-slate-50 border-t border-slate-200 mt-16">
-      <div className="mx-auto w-full max-w-screen-xl">
-        <div className="grid grid-cols-2 gap-8 px-4 py-10 lg:py-12 md:grid-cols-4">
-          <div>
-            <h2 className="mb-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Company</h2>
-            <ul className="text-slate-600 text-sm space-y-3">
-              <li>
-                <a href="#" className="hover:text-accent">
-                  About Volta
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-accent">
-                  Careers
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-accent">
-                  Press
-                </a>
-              </li>
-            </ul>
-          </div>
-          <div>
-            <h2 className="mb-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Help</h2>
-            <ul className="text-slate-600 text-sm space-y-3">
-              <li>
-                <a href="#" className="hover:text-accent">
-                  Support
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-accent">
-                  Shipping
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-accent">
-                  Returns
-                </a>
-              </li>
-            </ul>
-          </div>
-          <div>
-            <h2 className="mb-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Legal</h2>
-            <ul className="text-slate-600 text-sm space-y-3">
-              <li>
-                <a href="#" className="hover:text-accent">
-                  Privacy
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-accent">
-                  Terms
-                </a>
-              </li>
-            </ul>
-          </div>
-          <div>
-            <h2 className="mb-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Volta</h2>
-            <p className="text-slate-600 text-sm leading-relaxed">
-              Electronics storefront demo — MongoDB catalog, purchase-driven trending, Flask recommendations.
+    <footer className="bg-slate-900 text-slate-400 mt-8">
+      <div className="container">
+        <div className="grid grid-cols-2 gap-8 py-12 md:grid-cols-4">
+          {/* brand */}
+          <div className="col-span-2 md:col-span-1">
+            <Link href="/" className="text-2xl font-bold text-white tracking-tight">
+              Volta<span className="text-accent">.</span>
+            </Link>
+            <p className="text-sm mt-3 leading-relaxed max-w-[200px]">
+              Electronics storefront with MongoDB, Flask recommendations, and Next.js.
             </p>
           </div>
+
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">Shop</h3>
+            <ul className="space-y-2 text-sm">
+              {["Phones", "Laptops", "Audio", "Gaming", "Cameras"].map((s) => (
+                <li key={s}>
+                  <Link href={`/shop?subcategory=${s}`} className="hover:text-white transition">
+                    {s}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">Company</h3>
+            <ul className="space-y-2 text-sm">
+              {["About", "Careers", "Press", "Support", "Returns"].map((item) => (
+                <li key={item}>
+                  <a href="#" className="hover:text-white transition">{item}</a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-4">Legal</h3>
+            <ul className="space-y-2 text-sm">
+              {["Privacy Policy", "Terms of Service", "Cookie Policy"].map((item) => (
+                <li key={item}>
+                  <a href="#" className="hover:text-white transition">{item}</a>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
-        <div className="px-4 py-6 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <span className="text-sm text-slate-500">© 2026 Volta Electronics. Course project.</span>
-          <div className="flex gap-4 text-slate-400">
-            <span className="sr-only">Social</span>
+
+        <div className="border-t border-slate-800 py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <span className="text-sm">© 2026 Volta Electronics. CPSC-597 course project.</span>
+          <div className="flex gap-2 text-xs">
+            <span className="bg-slate-800 px-2 py-1 rounded">Next.js 15</span>
+            <span className="bg-slate-800 px-2 py-1 rounded">MongoDB</span>
+            <span className="bg-slate-800 px-2 py-1 rounded">Flask SVD</span>
           </div>
         </div>
       </div>
-    </div>
+    </footer>
   );
 };
 
