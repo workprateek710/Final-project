@@ -1,7 +1,10 @@
 import { setLoading } from "@/redux/features/loadingSlice";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
+import {
+  ELECTRONICS_SUBCATEGORIES,
+  PRIMARY_CATEGORY,
+} from "@/constants/productCategories";
 import { makeToast } from "@/utils/helper";
-import { UploadButton } from "@/utils/uploadthing";
 import axios from "axios";
 import Image from "next/image";
 import { Dispatch, FormEvent, SetStateAction, useState } from "react";
@@ -17,11 +20,36 @@ const Popup = ({ setOpenPopup, setUpdateTable }: PropsType) => {
   const dispatch = useAppDispatch();
   const [inputData, setInputData] = useState({
     name: productData.name,
-    category: productData.category,
+    category: productData.category || PRIMARY_CATEGORY,
+    subcategory: productData.subcategory || "General",
     price: productData.price,
     imgSrc: productData.imgSrc,
     fileKey: productData.fileKey,
   });
+  const [uploading, setUploading] = useState(false);
+
+  const handleImageUpload = async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    setUploading(true);
+    try {
+      const { data } = await axios.post("/api/local-upload", formData);
+      setInputData((prev) => ({
+        ...prev,
+        imgSrc: data.url,
+        fileKey: data.fileKey,
+      }));
+      makeToast("Image uploaded.");
+    } catch (error) {
+      const message =
+        axios.isAxiosError(error) && typeof error.response?.data?.message === "string"
+          ? error.response.data.message
+          : "Image upload failed";
+      makeToast(message);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -31,13 +59,11 @@ const Popup = ({ setOpenPopup, setUpdateTable }: PropsType) => {
     axios
       .put(`/api/edit_product/${productData._id}`, inputData)
       .then(() => {
-        if (
-          oldFileKey &&
-          newFileKey &&
-          oldFileKey !== newFileKey &&
-          !oldFileKey.startsWith("local:")
-        ) {
-          axios.delete("/api/uploadthing", { data: { fileKey: oldFileKey } }).catch(() => {
+        if (oldFileKey && newFileKey && oldFileKey !== newFileKey) {
+          const cleanupEndpoint = oldFileKey.startsWith("localupload:")
+            ? "/api/local-upload"
+            : "/api/uploadthing";
+          axios.delete(cleanupEndpoint, { data: { fileKey: oldFileKey } }).catch(() => {
             // best-effort cleanup only; do not block successful product update
           });
         }
@@ -66,19 +92,21 @@ const Popup = ({ setOpenPopup, setUpdateTable }: PropsType) => {
             height={220}
             alt="product_image"
           />
-          <UploadButton
-            endpoint="imageUploader"
-            onClientUploadComplete={(res) => {
-              setInputData((prev) => ({
-                ...prev,
-                imgSrc: res[0]?.url || prev.imgSrc,
-                fileKey: res[0]?.key || prev.fileKey,
-              }));
-            }}
-            onUploadError={() => {
-              makeToast("Image upload failed");
-            }}
-          />
+          <div className="text-left">
+            <label className="block ml-1 mb-1">Product Image (max 4MB)</label>
+            <input
+              className="block w-full"
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  void handleImageUpload(file);
+                }
+              }}
+            />
+            {uploading && <p className="text-sm text-gray-500 mt-1">Uploading image...</p>}
+          </div>
           <input
             className="border block border-gray-500 outline-none px-4 py-2 rounded-lg w-fit"
             type="text"
@@ -89,16 +117,30 @@ const Popup = ({ setOpenPopup, setUpdateTable }: PropsType) => {
             }
             required
           />
-          <input
+          <select
             className="border block border-gray-500 outline-none px-4 py-2 rounded-lg w-fit"
-            type="text"
-            placeholder="Category"
             value={inputData.category}
             onChange={(e) =>
               setInputData({ ...inputData, category: e.target.value })
             }
             required
-          />
+          >
+            <option value={PRIMARY_CATEGORY}>{PRIMARY_CATEGORY}</option>
+          </select>
+          <select
+            className="border block border-gray-500 outline-none px-4 py-2 rounded-lg w-fit"
+            value={inputData.subcategory}
+            onChange={(e) =>
+              setInputData({ ...inputData, subcategory: e.target.value })
+            }
+            required
+          >
+            {ELECTRONICS_SUBCATEGORIES.map((subcategory) => (
+              <option key={subcategory} value={subcategory}>
+                {subcategory}
+              </option>
+            ))}
+          </select>
           <input
             className="border block border-gray-500 outline-none px-4 py-2 rounded-lg w-fit"
             type="text"
@@ -110,8 +152,11 @@ const Popup = ({ setOpenPopup, setUpdateTable }: PropsType) => {
             required
           />
           <div className="flex justify-end">
-            <button className="bg-blue-500 text-white px-8 py-2 rounded-lg self-center">
-              Save
+            <button
+              className="bg-blue-500 text-white px-8 py-2 rounded-lg self-center disabled:opacity-60"
+              disabled={uploading}
+            >
+              {uploading ? "Uploading..." : "Save"}
             </button>
           </div>
         </form>

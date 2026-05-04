@@ -46,8 +46,11 @@ const ProductRow = ({
       void afterMongo();
       return;
     }
+    const endpoint = product.fileKey?.startsWith("localupload:")
+      ? "/api/local-upload"
+      : "/api/uploadthing";
     const payload = { fileKey: product.fileKey };
-    axios.delete("/api/uploadthing", { data: payload }).finally(() => {
+    axios.delete(endpoint, { data: payload }).finally(() => {
       void afterMongo();
     });
   };

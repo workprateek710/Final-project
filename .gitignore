@@ -4,6 +4,7 @@ node_modules/
 # Next.js
 **/.next/
 **/out/
+ecommerce-nextjs-main/public/uploads/
 
 # Local env (never commit secrets)
 .env
