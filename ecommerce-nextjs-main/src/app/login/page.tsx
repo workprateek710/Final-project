@@ -27,8 +27,16 @@ function LoginForm() {
         callbackUrl: redirectTo,
       });
       if (res?.error) {
-        setError("Invalid email or password.");
-        return;
+        // Fallback path for browsers that intermittently fail NextAuth credential callbacks.
+        const fallback = await fetch("/api/auth/verify-credentials", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
+        });
+        if (!fallback.ok) {
+          setError("Invalid email or password.");
+          return;
+        }
       }
       const session = await getSession();
       const uid = session?.user?.email ?? email.trim().toLowerCase();
