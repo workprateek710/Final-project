@@ -20,26 +20,26 @@ function LoginForm() {
     setError("");
     setLoading(true);
     try {
-      const res = await signIn("credentials", {
-        email: email.trim().toLowerCase(),
+      const normalizedEmail = email.trim().toLowerCase();
+      const verifyRes = await fetch("/api/auth/verify-credentials", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: normalizedEmail, password }),
+      });
+      if (!verifyRes.ok) {
+        setError("Invalid email or password.");
+        return;
+      }
+
+      // Best-effort NextAuth session for admin-compatible areas, but do not block storefront login.
+      await signIn("credentials", {
+        email: normalizedEmail,
         password,
         redirect: false,
         callbackUrl: redirectTo,
-      });
-      if (res?.error) {
-        // Fallback path for browsers that intermittently fail NextAuth credential callbacks.
-        const fallback = await fetch("/api/auth/verify-credentials", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
-        });
-        if (!fallback.ok) {
-          setError("Invalid email or password.");
-          return;
-        }
-      }
-      const session = await getSession();
-      const uid = session?.user?.email ?? email.trim().toLowerCase();
+      }).catch(() => null);
+      const session = await getSession().catch(() => null);
+      const uid = session?.user?.email ?? normalizedEmail;
       if (typeof window !== "undefined") {
         localStorage.setItem("user", uid);
       }
