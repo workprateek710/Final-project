@@ -34,22 +34,26 @@ const ProductForm = () => {
   const dispatch = useAppDispatch();
 
   const handleImageUpload = async (file: File) => {
-    const formData = new FormData();
-    formData.append("file", file);
+    if (file.size > 4 * 1024 * 1024) {
+      makeToast("Image must be 4MB or smaller.");
+      return;
+    }
     setUploading(true);
     try {
-      const { data } = await axios.post("/api/local-upload", formData);
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(new Error("Could not read image file."));
+        reader.readAsDataURL(file);
+      });
       setPayLoad((prev) => ({
         ...prev,
-        imgSrc: data.url,
-        fileKey: data.fileKey,
+        imgSrc: dataUrl,
+        fileKey: `inline:${Date.now()}`,
       }));
       makeToast("Image uploaded.");
     } catch (error) {
-      const message =
-        axios.isAxiosError(error) && typeof error.response?.data?.message === "string"
-          ? error.response.data.message
-          : "Image upload failed";
+      const message = error instanceof Error ? error.message : "Image upload failed";
       makeToast(message);
     } finally {
       setUploading(false);

@@ -42,7 +42,10 @@ const ProductRow = ({
       }
     };
 
-    if (product.fileKey?.startsWith("local:")) {
+    if (
+      product.fileKey?.startsWith("local:") ||
+      product.fileKey?.startsWith("inline:")
+    ) {
       void afterMongo();
       return;
     }
