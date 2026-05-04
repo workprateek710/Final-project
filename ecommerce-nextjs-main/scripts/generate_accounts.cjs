@@ -153,6 +153,48 @@ async function main() {
   if (purchaseDocs.length) await purchasesCol.insertMany(purchaseDocs);
   if (reviewDocs.length) await ratingsCol.insertMany(reviewDocs);
 
+  // Keep product cards/detail review counters consistent with ProductRating rows.
+  const ratingStats = await ratingsCol
+    .aggregate([
+      {
+        $group: {
+          _id: "$prodId",
+          reviews: { $sum: 1 },
+          ratingAvg: { $avg: "$rating" },
+        },
+      },
+    ])
+    .toArray();
+  const byProd = new Map(
+    ratingStats.map((r) => [
+      String(r._id),
+      {
+        reviews: Number(r.reviews) || 0,
+        ratingAvg: Number(Number(r.ratingAvg || 0).toFixed(2)),
+      },
+    ])
+  );
+  const allProducts = await productsCol.find({}, { projection: { _id: 1, prodId: 1 } }).toArray();
+  if (allProducts.length) {
+    await productsCol.bulkWrite(
+      allProducts.map((p) => {
+        const stat = byProd.get(String(p.prodId || ""));
+        return {
+          updateOne: {
+            filter: { _id: p._id },
+            update: {
+              $set: {
+                reviews: stat?.reviews ?? 0,
+                ratingAvg: stat?.ratingAvg ?? 0,
+              },
+            },
+          },
+        };
+      }),
+      { ordered: false }
+    );
+  }
+
   console.log(
     JSON.stringify(
       {
