@@ -1,0 +1,5 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "cd ecommerce-nextjs-main && npm install",
+  "buildCommand": "cd ecommerce-nextjs-main && npm run build"
+}

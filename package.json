@@ -1,0 +1,6 @@
+{
+  "name": "cpsc-597-final-project",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Monorepo root — Next.js storefront is in ecommerce-nextjs-main/. Vercel uses root vercel.json install/build commands."
+}
