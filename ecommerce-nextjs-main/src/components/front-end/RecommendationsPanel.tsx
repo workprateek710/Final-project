@@ -19,6 +19,7 @@ export default function RecommendationsPanel({ userId }: { userId: string }) {
   const [rows, setRows] = useState<RecRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
+  const [showEmptyHint, setShowEmptyHint] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -27,6 +28,7 @@ export default function RecommendationsPanel({ userId }: { userId: string }) {
         const res = await axios.get("/api/recommendations", { params: { user_id: userId } });
         if (cancelled) return;
         setRows(res.data?.recommendations ?? []);
+        setShowEmptyHint(res.data?.reason === "insufficient_history");
       } catch {
         setErr("Recommendations unavailable — Flask service may be sleeping, try again in a moment.");
       } finally {
@@ -68,7 +70,16 @@ export default function RecommendationsPanel({ userId }: { userId: string }) {
     );
   }
 
-  if (!rows.length) return null;
+  if (!rows.length) {
+    if (!showEmptyHint) return null;
+    return (
+      <section className="container py-6">
+        <p className="text-sm text-slate-600 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 inline-block">
+          Recommendations unlock after you make a purchase.
+        </p>
+      </section>
+    );
+  }
 
   return (
     <section className="container py-10">

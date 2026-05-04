@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import Purchase from "@/libs/models/Purchase";
+import { connectMongoDB } from "@/libs/MongoConnect";
 
 const FLASK_BASE =
   process.env.FLASK_RECOMMENDER_URL?.replace(/\/$/, "") || "http://127.0.0.1:5000";
+const MIN_PURCHASES_FOR_RECS = Math.max(
+  1,
+  Number(process.env.MIN_PURCHASES_FOR_RECS ?? "1")
+);
 
 /**
  * Server-side proxy to the Flask recommender so the browser never hard-codes the port.
@@ -13,6 +19,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "user_id is required" }, { status: 400 });
   }
   try {
+    // Cold-start guard: no recommendations until user has enough purchase history.
+    await connectMongoDB();
+    const purchaseCount = await Purchase.countDocuments({ userId });
+    if (purchaseCount < MIN_PURCHASES_FOR_RECS) {
+      return NextResponse.json({
+        recommendations: [],
+        reason: "insufficient_history",
+        purchaseCount,
+      });
+    }
+
     const res = await fetch(
       `${FLASK_BASE}/recommend?user_id=${encodeURIComponent(userId)}`,
       { cache: "no-store" }
