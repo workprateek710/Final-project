@@ -37,6 +37,21 @@ const CheckoutContent = () => {
       return;
     }
     setAuthChecked(true);
+    // pre-fill shipping from saved profile address
+    fetch(`/api/profile?email=${encodeURIComponent(user)}`)
+      .then((r) => r.json())
+      .then((profile) => {
+        if (profile?.address || profile?.city) {
+          setFormData((prev) => ({
+            ...prev,
+            name: profile.name || prev.name,
+            address: profile.address || prev.address,
+            city: profile.city || prev.city,
+            zip: profile.zip || prev.zip,
+          }));
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const getTotal = () => products.reduce((total, item) => total + item.price * item.quantity, 0);

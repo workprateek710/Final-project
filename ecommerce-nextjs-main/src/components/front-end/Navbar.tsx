@@ -219,12 +219,12 @@ const Navbar = ({ setShowCart }: { setShowCart: Dispatch<SetStateAction<boolean>
             <div className="hidden md:flex gap-3 items-center">
               {isLoggedIn ? (
                 <>
-                  <div className="rounded-full border-2 border-slate-200 text-slate-400 text-2xl w-11 h-11 grid place-items-center bg-slate-50">
+                  <Link href="/profile" className="rounded-full border-2 border-slate-200 text-slate-400 text-2xl w-11 h-11 grid place-items-center bg-slate-50 hover:border-accent hover:text-accent transition">
                     <AiOutlineUser />
-                  </div>
+                  </Link>
                   <div className="max-w-[140px]">
                     <p className="text-slate-500 text-xs">Signed in</p>
-                    <p className="font-medium text-sm text-slate-800 truncate">{String(isLoggedIn)}</p>
+                    <Link href="/profile" className="font-medium text-sm text-slate-800 truncate hover:text-accent transition block">{String(isLoggedIn)}</Link>
                   </div>
                   <button
                     type="button"
@@ -312,6 +312,11 @@ const Navbar = ({ setShowCart }: { setShowCart: Dispatch<SetStateAction<boolean>
             <Link href="/checkout" className="text-slate-600 hover:text-accent">
               Checkout
             </Link>
+            {isLoggedIn && (
+              <Link href="/profile" className="text-slate-600 hover:text-accent">
+                My Profile
+              </Link>
+            )}
             <Link href="/admin/dashboard" className="text-slate-400 hover:text-slate-700 ml-auto text-xs uppercase tracking-wide">
               Admin
             </Link>
