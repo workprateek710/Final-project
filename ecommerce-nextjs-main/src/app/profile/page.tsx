@@ -306,7 +306,7 @@ export default function ProfilePage() {
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5">
             <div>
               <h2 className="font-semibold text-slate-900 text-lg">Saved shipping address</h2>
-              <p className="text-slate-500 text-sm mt-0.5">This is auto-filled at checkout so you don't have to retype it.</p>
+              <p className="text-slate-500 text-sm mt-0.5">This is auto-filled at checkout so you don&#39;t have to retype it.</p>
             </div>
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="sm:col-span-2">
@@ -341,7 +341,7 @@ export default function ProfilePage() {
           <div className="space-y-4">
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
               <h2 className="font-semibold text-slate-900 text-lg">Order history</h2>
-              <p className="text-slate-500 text-sm mt-0.5">Every item you've purchased — newest first.</p>
+              <p className="text-slate-500 text-sm mt-0.5">Every item you&#39;ve purchased — newest first.</p>
             </div>
 
             {loadingOrders ? (
