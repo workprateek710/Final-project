@@ -7,12 +7,6 @@ export const dynamic = "force-dynamic";
 
 type Props = { searchParams: Promise<{ subcategory?: string }> | { subcategory?: string } };
 
-const SUBCATEGORIES = [
-  "Phones", "Laptops", "Audio", "Tablets", "TV",
-  "Gaming", "Accessories", "Monitors", "Storage",
-  "Cameras", "Wearables", "Smart home",
-];
-
 export default async function ShopPage({ searchParams }: Props) {
   const sp = await Promise.resolve(searchParams);
   const subcategory = sp?.subcategory;
@@ -32,6 +26,9 @@ export default async function ShopPage({ searchParams }: Props) {
     ratingAvg: doc.ratingAvg as number | undefined,
     reviews: doc.reviews as number | undefined,
   }));
+  const subcategories = Array.from(
+    new Set(items.map((item) => item.subcategory).filter(Boolean))
+  ).sort((a, b) => a.localeCompare(b));
 
   return (
     <div className="bg-slate-50 min-h-screen">
@@ -60,7 +57,7 @@ export default async function ShopPage({ searchParams }: Props) {
           >
             All
           </Link>
-          {SUBCATEGORIES.map((s) => (
+          {subcategories.map((s) => (
             <Link
               key={s}
               href={`/shop?subcategory=${encodeURIComponent(s)}`}
