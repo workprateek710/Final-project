@@ -45,6 +45,7 @@ export async function GET() {
           category: p.category,
           purchases: row.purchases,
           avgRating: Math.round(row.avgRating * 10) / 10,
+          reviews: p.reviews ?? 0,
         };
       })
       .filter(Boolean);

@@ -13,6 +13,8 @@ type RecRow = {
   imgSrc?: string;
   slug?: string;
   ratingAvg?: number;
+  reviews?: number;
+  purchases?: number;
 };
 
 export default function RecommendationsPanel({ userId }: { userId: string }) {
@@ -90,7 +92,7 @@ export default function RecommendationsPanel({ userId }: { userId: string }) {
             Based on your recent purchase history.
           </p>
         </div>
-        <Link href="/shop" className="text-sm font-semibold text-accent hover:underline shrink-0">
+        <Link href="/recommendations" className="text-sm font-semibold text-accent hover:underline shrink-0">
           Browse all
         </Link>
       </div>
@@ -116,7 +118,13 @@ export default function RecommendationsPanel({ userId }: { userId: string }) {
             </p>
             <p className="text-xs text-amber-500 mt-1">
               ★ {(product.ratingAvg ?? product.rating ?? 0).toFixed(1)}
+              {product.reviews !== undefined && (
+                <span className="text-slate-400"> · {product.reviews} reviews</span>
+              )}
             </p>
+            {product.purchases !== undefined && (
+              <p className="text-xs text-slate-400 mt-1">{product.purchases} purchases</p>
+            )}
             {product.price && (
               <p className="text-accent font-bold text-sm mt-1">${product.price}</p>
             )}

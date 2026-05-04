@@ -12,6 +12,7 @@ type TrendRow = {
   price: string;
   purchases: number;
   avgRating: number;
+  reviews: number;
 };
 
 /**
@@ -65,7 +66,9 @@ export default function TrendingStrip() {
             <p className="font-semibold text-sm mt-2 line-clamp-2 text-slate-900 group-hover:text-accent transition">
               {t.name}
             </p>
-            <p className="text-xs text-slate-500 mt-1">{t.purchases} purchases</p>
+            <p className="text-xs text-slate-500 mt-1">
+              {t.purchases} purchases · {t.reviews} reviews
+            </p>
             <p className="text-accent font-bold text-sm mt-1">${t.price}</p>
           </Link>
         ))}
