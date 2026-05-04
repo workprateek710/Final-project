@@ -18,7 +18,7 @@ const geistMono = localFont({
 
 export const metadata: Metadata = {
   title: "Volta Electronics — CPSC-597 storefront",
-  description: "Electronics e-commerce demo with MongoDB catalog and Flask recommender.",
+  description: "Electronics storefront with MongoDB catalog and personalized recommendations.",
 };
 
 export default function RootLayout({

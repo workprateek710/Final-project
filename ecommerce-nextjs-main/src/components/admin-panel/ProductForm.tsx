@@ -15,34 +15,33 @@ interface IPayload {
   price: string;
 }
 
-const ProductForm = () => {
-  const [payLoad, setPayLoad] = useState<IPayload>({
-    imgSrc: null,
-    fileKey: null,
-    name: "",
-    category: "Electronics",
-    price: "",
-  });
-  const dispatch = useAppDispatch();
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    dispatch(setLoading(true));
+const emptyPayload: IPayload = {
+  imgSrc: null,
+  fileKey: null,
+  name: "",
+  category: "Electronics",
+  price: "",
+};
 
-    axios
-      .post("/api/add_product", payLoad)
-      .then((res) => {
-        console.log(res.data)
-        makeToast("Product Added Successfully");
-        setPayLoad({
-          imgSrc: null,
-          fileKey: null,
-          name: "",
-          category: "Electronics",
-          price: "",
-        });
-      })
-      .catch((err) => console.log(err))
-      .finally(() => dispatch(setLoading(false)));
+const ProductForm = () => {
+  const [payLoad, setPayLoad] = useState<IPayload>(emptyPayload);
+  const dispatch = useAppDispatch();
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!payLoad.imgSrc || !payLoad.fileKey) {
+      makeToast("Please upload a product image first.");
+      return;
+    }
+    dispatch(setLoading(true));
+    try {
+      await axios.post("/api/add_product", payLoad);
+      makeToast("Product added successfully");
+      setPayLoad(emptyPayload);
+    } catch {
+      makeToast("Could not add product");
+    } finally {
+      dispatch(setLoading(false));
+    }
   };
   return (
     <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
@@ -56,12 +55,13 @@ const ProductForm = () => {
       <UploadButton
         endpoint="imageUploader"
         onClientUploadComplete={(res) => {
-          console.log(res);
-          setPayLoad({ ...payLoad, imgSrc: res[0]?.url, fileKey: res[0]?.key });
+          setPayLoad((prev) => ({
+            ...prev,
+            imgSrc: res[0]?.url ?? prev.imgSrc,
+            fileKey: res[0]?.key ?? prev.fileKey,
+          }));
         }}
-        onUploadError={(error: Error) => {
-          console.log(`ERROR ${error}`);
-        }}
+        onUploadError={() => makeToast("Image upload failed")}
       />
       <div>
         <label className="block ml-1">Product Name</label>

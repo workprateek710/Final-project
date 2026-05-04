@@ -10,8 +10,8 @@ const MIN_PURCHASES_FOR_RECS = Math.max(
 );
 
 /**
- * Server-side proxy to the Flask recommender so the browser never hard-codes the port.
- * Flask returns prod_ids; it already merges Mongo product fields when configured.
+ * Server-side proxy to the personalization service.
+ * Keeps service URLs private and centralizes gating rules.
  */
 export async function GET(request: NextRequest) {
   const userId = request.nextUrl.searchParams.get("user_id");
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "user_id is required" }, { status: 400 });
   }
   try {
-    // Cold-start guard: no recommendations until user has enough purchase history.
+    // Gate recommendations until user has enough purchase history.
     await connectMongoDB();
     const purchaseCount = await Purchase.countDocuments({ userId });
     if (purchaseCount < MIN_PURCHASES_FOR_RECS) {
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(data);
   } catch {
     return NextResponse.json(
-      { error: "Recommender unavailable", recommendations: [] },
+      { error: "Recommendations unavailable", recommendations: [] },
       { status: 503 }
     );
   }

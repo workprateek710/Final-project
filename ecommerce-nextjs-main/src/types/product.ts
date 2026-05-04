@@ -1,7 +1,7 @@
 /**
  * Shared product shapes for admin dashboard and catalog pages.
  * - Mongo `_id` is only for admin CRUD.
- * - `prodId` is the stable catalog id shared with the recommender (Flask) and `Purchase` rows.
+ * - `prodId` is the stable catalog id shared with purchase-history services and `Purchase` rows.
  */
 
 export interface IProduct {

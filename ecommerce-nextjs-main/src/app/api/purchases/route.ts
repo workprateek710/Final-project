@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 type Line = { prodId: string; rating?: number; quantity?: number };
 
 /**
- * Records checkout lines for the recommender training data (Mongo → Flask reads same DB).
+ * Records checkout lines as purchase history.
  * Each line creates one purchase document (rating defaults to 5).
  */
 export async function POST(request: NextRequest) {
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: "Purchases recorded", count: docs.length });
   } catch (error) {
     return NextResponse.json(
-      { error: String(error), message: "Something Went Wrong" },
+      { error: String(error), message: "Could not record purchases" },
       { status: 400 }
     );
   }

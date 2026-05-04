@@ -30,8 +30,7 @@ const Popup = ({ setOpenPopup, setUpdateTable }: PropsType) => {
     const newFileKey = inputData.fileKey;
     axios
       .put(`/api/edit_product/${productData._id}`, inputData)
-      .then((res) => {
-        console.log(res.data);
+      .then(() => {
         if (
           oldFileKey &&
           newFileKey &&
@@ -42,10 +41,10 @@ const Popup = ({ setOpenPopup, setUpdateTable }: PropsType) => {
             // best-effort cleanup only; do not block successful product update
           });
         }
-        makeToast("Product Updated Successfully");
+        makeToast("Product updated successfully");
         setUpdateTable((prevState) => !prevState);
       })
-      .catch((err) => console.log(err))
+      .catch(() => makeToast("Could not update product"))
       .finally(() => {
         dispatch(setLoading(false));
         setOpenPopup(false);
@@ -76,8 +75,7 @@ const Popup = ({ setOpenPopup, setUpdateTable }: PropsType) => {
                 fileKey: res[0]?.key || prev.fileKey,
               }));
             }}
-            onUploadError={(error: Error) => {
-              console.log(`ERROR ${error}`);
+            onUploadError={() => {
               makeToast("Image upload failed");
             }}
           />

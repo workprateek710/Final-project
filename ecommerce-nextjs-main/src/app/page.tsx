@@ -35,7 +35,7 @@ export default function Home() {
             <div>
               <h2 className="text-xl font-bold text-white">Get personalised recommendations</h2>
               <p className="text-slate-300 text-sm mt-1 max-w-lg">
-                Sign in to see AI-powered picks based on your purchase history, powered by our Flask SVD recommender.
+                Sign in to get product suggestions based on your purchase history.
               </p>
             </div>
             <div className="flex gap-3 shrink-0">

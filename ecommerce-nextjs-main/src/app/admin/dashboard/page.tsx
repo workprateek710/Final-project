@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 export type { IProduct };
 
 const Dashboard = () => {
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState<IProduct[]>([]);
   const [openPopup, setOpenPopup] = useState(false);
   const [updateTable, setUpdateTable] = useState(false);
 
@@ -39,9 +39,7 @@ const Dashboard = () => {
     };
 
     fetchProducts();
-  }, [updateTable]);
-
-  console.log("products:", products);
+  }, [dispatch, updateTable]);
 
   return (
     <div>

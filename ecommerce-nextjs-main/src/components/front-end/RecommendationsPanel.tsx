@@ -30,7 +30,7 @@ export default function RecommendationsPanel({ userId }: { userId: string }) {
         setRows(res.data?.recommendations ?? []);
         setShowEmptyHint(res.data?.reason === "insufficient_history");
       } catch {
-        setErr("Recommendations unavailable — Flask service may be sleeping, try again in a moment.");
+        setErr("Recommendations are temporarily unavailable. Please try again shortly.");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -87,7 +87,7 @@ export default function RecommendationsPanel({ userId }: { userId: string }) {
         <div>
           <h2 className="text-2xl font-bold text-slate-900">Recommended for you</h2>
           <p className="text-slate-500 text-sm mt-1">
-            Personalised by our Flask SVD recommender based on your purchase history.
+            Based on your recent purchase history.
           </p>
         </div>
         <Link href="/shop" className="text-sm font-semibold text-accent hover:underline shrink-0">

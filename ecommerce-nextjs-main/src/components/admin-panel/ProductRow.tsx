@@ -30,32 +30,26 @@ const ProductRow = ({
 
   const onDelete = () => {
     dispatch(setLoading(true));
-    const afterMongo = () =>
-      axios
-        .delete(`/api/delete_product/${product._id}`)
-        .then((res) => {
-          console.log(res.data);
-          makeToast("Product Deleted Successfully");
-          setUpdateTable((prevState) => !prevState);
-        })
-        .catch((err) => console.log(err))
-        .finally(() => dispatch(setLoading(false)));
+    const afterMongo = async () => {
+      try {
+        await axios.delete(`/api/delete_product/${product._id}`);
+        makeToast("Product deleted successfully");
+        setUpdateTable((prevState) => !prevState);
+      } catch {
+        makeToast("Could not delete product");
+      } finally {
+        dispatch(setLoading(false));
+      }
+    };
 
     if (product.fileKey?.startsWith("local:")) {
-      afterMongo();
+      void afterMongo();
       return;
     }
     const payload = { fileKey: product.fileKey };
-    axios
-      .delete("/api/uploadthing", { data: payload })
-      .then((res) => {
-        console.log(res.data);
-        afterMongo();
-      })
-      .catch((err) => {
-        console.log(err);
-        afterMongo();
-      });
+    axios.delete("/api/uploadthing", { data: payload }).finally(() => {
+      void afterMongo();
+    });
   };
   return (
     <tr>
