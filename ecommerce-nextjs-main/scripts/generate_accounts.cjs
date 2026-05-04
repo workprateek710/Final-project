@@ -5,7 +5,7 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
 const TARGET_NEW_USERS = 97;
-const PASSWORD = "1234578";
+const PASSWORD = "12345678";
 
 function parseEnv(text) {
   const out = {};

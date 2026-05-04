@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { connectMongoDB } from "@/libs/MongoConnect";
 import User from "@/libs/models/User";
 
-const SEEDED_DEMO_PASSWORDS = new Set(["1234578", "12345678"]);
+const SEEDED_DEMO_PASSWORDS = new Set(["12345678"]);
 
 export async function POST(request: NextRequest) {
   try {

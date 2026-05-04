@@ -8,7 +8,7 @@ import User from "@/libs/models/User";
 const googleConfigured =
   Boolean(process.env.GOOGLE_CLIENT_ID?.trim()) &&
   Boolean(process.env.GOOGLE_CLIENT_SECRET?.trim());
-const SEEDED_DEMO_PASSWORDS = new Set(["1234578", "12345678"]);
+const SEEDED_DEMO_PASSWORDS = new Set(["12345678"]);
 
 const providers: NextAuthOptions["providers"] = [
   CredentialsProvider({
