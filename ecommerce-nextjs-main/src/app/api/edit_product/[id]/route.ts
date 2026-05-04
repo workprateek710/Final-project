@@ -14,6 +14,8 @@ export async function PUT(
       name: body.name,
       category: body.category,
       price: body.price,
+      ...(body.imgSrc !== undefined && { imgSrc: body.imgSrc }),
+      ...(body.fileKey !== undefined && { fileKey: body.fileKey }),
       ...(body.subcategory !== undefined && { subcategory: body.subcategory }),
       ...(body.description !== undefined && { description: body.description }),
       ...(body.brand !== undefined && { brand: body.brand }),

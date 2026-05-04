@@ -1,7 +1,9 @@
 import { setLoading } from "@/redux/features/loadingSlice";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { makeToast } from "@/utils/helper";
+import { UploadButton } from "@/utils/uploadthing";
 import axios from "axios";
+import Image from "next/image";
 import { Dispatch, FormEvent, SetStateAction, useState } from "react";
 import { IoIosCloseCircle } from "react-icons/io";
 
@@ -17,15 +19,29 @@ const Popup = ({ setOpenPopup, setUpdateTable }: PropsType) => {
     name: productData.name,
     category: productData.category,
     price: productData.price,
+    imgSrc: productData.imgSrc,
+    fileKey: productData.fileKey,
   });
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     dispatch(setLoading(true));
+    const oldFileKey = productData.fileKey;
+    const newFileKey = inputData.fileKey;
     axios
       .put(`/api/edit_product/${productData._id}`, inputData)
       .then((res) => {
-        console.log(res.data)
+        console.log(res.data);
+        if (
+          oldFileKey &&
+          newFileKey &&
+          oldFileKey !== newFileKey &&
+          !oldFileKey.startsWith("local:")
+        ) {
+          axios.delete("/api/uploadthing", { data: { fileKey: oldFileKey } }).catch(() => {
+            // best-effort cleanup only; do not block successful product update
+          });
+        }
         makeToast("Product Updated Successfully");
         setUpdateTable((prevState) => !prevState);
       })
@@ -44,6 +60,27 @@ const Popup = ({ setOpenPopup, setUpdateTable }: PropsType) => {
         />
         <h2 className="text-2xl -mt-3">Edit Products</h2>
         <form className="mt-6 w-fit space-y-4 mx-auto" onSubmit={handleSubmit}>
+          <Image
+            className="max-h-[220px] w-auto object-contain rounded-md mx-auto"
+            src={inputData.imgSrc || "/placeholder.jpg"}
+            width={360}
+            height={220}
+            alt="product_image"
+          />
+          <UploadButton
+            endpoint="imageUploader"
+            onClientUploadComplete={(res) => {
+              setInputData((prev) => ({
+                ...prev,
+                imgSrc: res[0]?.url || prev.imgSrc,
+                fileKey: res[0]?.key || prev.fileKey,
+              }));
+            }}
+            onUploadError={(error: Error) => {
+              console.log(`ERROR ${error}`);
+              makeToast("Image upload failed");
+            }}
+          />
           <input
             className="border block border-gray-500 outline-none px-4 py-2 rounded-lg w-fit"
             type="text"
