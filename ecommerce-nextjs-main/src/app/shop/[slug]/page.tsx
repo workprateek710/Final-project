@@ -1,6 +1,7 @@
 import Product from "@/libs/models/Product";
 import { connectMongoDB } from "@/libs/MongoConnect";
 import AddToCartButton from "@/components/catalog/AddToCartButton";
+import ProductRatingPanel from "@/components/catalog/ProductRatingPanel";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -81,7 +82,7 @@ export default async function ProductDetailPage({ params }: Props) {
 
             <h1 className="text-3xl font-bold text-slate-900 leading-snug">{doc.name}</h1>
 
-            {/* rating */}
+            {/* rating summary */}
             <div className="flex items-center gap-2 mt-3">
               <div className="flex text-amber-400 text-sm">
                 {Array.from({ length: 5 }).map((_, i) => (
@@ -92,6 +93,12 @@ export default async function ProductDetailPage({ params }: Props) {
                 {rating.toFixed(1)} · {doc.reviews} reviews
               </span>
             </div>
+
+            <ProductRatingPanel
+              prodId={doc.prodId}
+              initialRatingAvg={rating}
+              initialReviews={doc.reviews ?? 0}
+            />
 
             <div className="flex items-baseline gap-3 mt-5">
               <span className="text-4xl font-extrabold text-slate-900">${doc.price}</span>
