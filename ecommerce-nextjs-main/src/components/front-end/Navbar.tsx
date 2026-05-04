@@ -291,7 +291,8 @@ const Navbar = ({ setShowCart }: { setShowCart: Dispatch<SetStateAction<boolean>
           </div>
         </div>
 
-        <div className="pt-3 pb-2">
+        {/* z-50: search dropdown (z-40) can grow tall and overlap this row; keep nav links clickable */}
+        <div className="relative z-50 pt-3 pb-2">
           <nav className="flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium">
             <Link href="/" className="text-slate-600 hover:text-accent">
               Home

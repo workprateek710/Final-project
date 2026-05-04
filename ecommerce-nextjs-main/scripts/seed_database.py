@@ -29,12 +29,18 @@ ROOT = Path(__file__).resolve().parents[1]
 def _load_env_file(path: Path) -> None:
     if not path.exists():
         return
-    for enc in ("utf-8-sig", "utf-8", "utf-16"):
+    # Windows editors often save .env as UTF-16-LE; try that before UTF-8.
+    for enc in ("utf-8-sig", "utf-16-le", "utf-8", "utf-16"):
         try:
             load_dotenv(path, encoding=enc)
             return
-        except (UnicodeDecodeError, UnicodeError):
+        except UnicodeDecodeError:
             continue
+        except ValueError as e:
+            # UTF-8 can "decode" UTF-16 .env files but inject NULs into keys; try next encoding.
+            if "null" in str(e).lower():
+                continue
+            raise
 
 
 _load_env_file(ROOT / ".env.local")

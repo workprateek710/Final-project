@@ -5,10 +5,11 @@ import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
-type Props = { searchParams: Promise<{ subcategory?: string }> };
+type Props = { searchParams: Promise<{ subcategory?: string }> | { subcategory?: string } };
 
 export default async function ShopPage({ searchParams }: Props) {
-  const { subcategory } = await searchParams;
+  const sp = await Promise.resolve(searchParams);
+  const subcategory = sp?.subcategory;
   await connectMongoDB();
   const filter: Record<string, string> = { category: "Electronics" };
   if (subcategory) filter.subcategory = subcategory;
