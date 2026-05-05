@@ -3,7 +3,7 @@ import Product from "@/libs/models/Product";
 import Purchase from "@/libs/models/Purchase";
 import User from "@/libs/models/User";
 
-type CategoryRow = { _id: string; count: number };
+type SubcategoryRow = { _id: string; count: number };
 type UserTxRow = { _id: string; count: number };
 
 export const dynamic = "force-dynamic";
@@ -17,11 +17,22 @@ export default async function AnalyticsPage() {
     Purchase.countDocuments({}),
   ]);
 
-  const categories = (await Product.aggregate([
-    { $group: { _id: "$category", count: { $sum: 1 } } },
+  const subcategories = (await Product.aggregate([
+    { $match: { category: "Electronics" } },
+    {
+      $project: {
+        subcategory: {
+          $cond: [
+            { $or: [{ $eq: ["$subcategory", null] }, { $eq: ["$subcategory", ""] }] },
+            "General",
+            "$subcategory",
+          ],
+        },
+      },
+    },
+    { $group: { _id: "$subcategory", count: { $sum: 1 } } },
     { $sort: { count: -1 } },
-    { $limit: 8 },
-  ])) as CategoryRow[];
+  ])) as SubcategoryRow[];
 
   const topUsers = (await Purchase.aggregate([
     { $group: { _id: "$userId", count: { $sum: 1 } } },
@@ -51,15 +62,15 @@ export default async function AnalyticsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         <div className="rounded-lg border border-slate-200 p-4">
-          <h3 className="font-semibold">Products by category</h3>
+          <h3 className="font-semibold">Products by subcategory</h3>
           <ul className="mt-3 space-y-2 text-sm">
-            {categories.map((row) => (
+            {subcategories.map((row) => (
               <li key={row._id} className="flex items-center justify-between border-b border-slate-100 pb-2">
-                <span>{row._id || "Uncategorized"}</span>
+                <span>{row._id || "General"}</span>
                 <span className="font-semibold">{row.count}</span>
               </li>
             ))}
-            {categories.length === 0 && <li className="text-slate-500">No category data.</li>}
+            {subcategories.length === 0 && <li className="text-slate-500">No subcategory data.</li>}
           </ul>
         </div>
 
