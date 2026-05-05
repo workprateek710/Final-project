@@ -1,7 +1,7 @@
 import { model, models, Schema } from "mongoose";
 
 /**
- * One row = one purchase signal for collaborative filtering (SVD in Flask).
+ * One row = one purchase signal for recommendations and trending analytics.
  * userId matches `localStorage` "user" string used on the storefront checkout.
  */
 const purchaseSchema = new Schema(

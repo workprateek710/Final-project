@@ -11,7 +11,7 @@ const Footer = () => {
               Volta<span className="text-accent">.</span>
             </Link>
             <p className="text-sm mt-3 leading-relaxed max-w-[200px]">
-              Electronics storefront built with Next.js, MongoDB, and Flask services.
+              Electronics storefront built with Next.js, MongoDB, and personalized recommendations.
             </p>
           </div>
 
@@ -56,7 +56,7 @@ const Footer = () => {
           <div className="flex gap-2 text-xs">
             <span className="bg-slate-800 px-2 py-1 rounded">Next.js 15</span>
             <span className="bg-slate-800 px-2 py-1 rounded">MongoDB</span>
-            <span className="bg-slate-800 px-2 py-1 rounded">Flask API</span>
+            <span className="bg-slate-800 px-2 py-1 rounded">Recommendations</span>
           </div>
         </div>
       </div>

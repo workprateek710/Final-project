@@ -1,12 +1,12 @@
 # Deploy the Volta storefront on Vercel
 
-Only the **Next.js app** in `ecommerce-nextjs-main` runs on Vercel. **MongoDB** must be **MongoDB Atlas** (or another cloud URL). The **Flask recommender** must run somewhere else (e.g. Render, Railway, Fly.io) and you set `FLASK_RECOMMENDER_URL` to that public URL.
+Only the **Next.js app** in `ecommerce-nextjs-main` runs on Vercel. **MongoDB** must be **MongoDB Atlas** (or another cloud URL). Recommendations are handled by the Next.js API route, so no separate Flask/Render service is required.
 
 ## 1. Prerequisites
 
 1. Push this project to **GitHub** (or GitLab / Bitbucket) if it is not already.
 2. Create a **MongoDB Atlas** cluster and a database user. Under **Network Access**, add **`0.0.0.0/0`** (required so Vercel’s serverless IPs can connect), or use Atlas **Private Endpoint** on a paid plan.
-3. (Optional, for “Recommended for you”) Deploy `ecommerce-nextjs-main/app.py` on **Render** / **Railway** with the same `MONGO_URI` as production. Note the HTTPS base URL (no trailing slash).
+3. Make sure the production `MONGO_URI` points at the same database that contains `products` and `purchases`, because recommendations are computed from those collections.
 
 ## 2. Create the Vercel project
 
@@ -26,7 +26,6 @@ Add these for **Production** (and Preview if you want previews to work):
 | `MONGO_URI` | `mongodb+srv://USER:PASS@cluster0.xxxxx.mongodb.net/ecommerce-597?retryWrites=true&w=majority` |
 | `NEXTAUTH_SECRET` | Long random string, e.g. `openssl rand -base64 32` |
 | `NEXTAUTH_URL` | After first deploy: `https://YOUR-PROJECT.vercel.app` (must match the site URL exactly) |
-| `FLASK_RECOMMENDER_URL` | `https://your-flask-service.onrender.com` (omit or set only when Flask is live) |
 | `UPLOADTHING_SECRET` | From UploadThing dashboard (if you use admin uploads) |
 | `UPLOADTHING_APP_ID` | From UploadThing dashboard |
 | `GOOGLE_CLIENT_ID` | Optional, for Google sign-in |
@@ -57,5 +56,4 @@ Set the same environment variables in the Vercel dashboard or via `npx vercel en
 
 ## What does not run on Vercel
 
-- **Flask** (`app.py`): host separately; Next.js calls it via `FLASK_RECOMMENDER_URL`.
 - **Local MongoDB**: not reachable from Vercel; use Atlas.

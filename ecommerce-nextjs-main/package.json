@@ -7,7 +7,6 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "heroku-postbuild": "npm run build",
     "db:seed": "python scripts/seed_database.py",
     "db:reset": "python scripts/reset_data.py"
   },
