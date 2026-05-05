@@ -34,8 +34,8 @@ function mapCatalog(p: CatalogProduct): NavbarProduct {
   };
 }
 
-type TrendRow = { prodId: string; slug: string; name: string; imgSrc: string; price: string };
-type RecRow = { prod_id: string; name?: string; imgSrc?: string; slug?: string; price?: string };
+type TrendRow = { prodId: string; slug: string; name: string; imgSrc: string; price: string; avgRating?: number };
+type RecRow = { prod_id: string; name?: string; imgSrc?: string; slug?: string; price?: string; ratingAvg?: number };
 
 const Navbar = ({ setShowCart }: { setShowCart: Dispatch<SetStateAction<boolean>> }) => {
   const cartCount = useAppSelector((state) => state.cartReducer.length);
@@ -94,7 +94,7 @@ const Navbar = ({ setShowCart }: { setShowCart: Dispatch<SetStateAction<boolean>
           price: Number.parseFloat(String(row.price)) || 0,
           imageUrl: row.imgSrc,
           reviews: 0,
-          rating: 5,
+          rating: row.avgRating ?? 0,
           slug: row.slug,
         });
       }
@@ -109,7 +109,7 @@ const Navbar = ({ setShowCart }: { setShowCart: Dispatch<SetStateAction<boolean>
           price: Number.parseFloat(String(row.price ?? "0")) || 0,
           imageUrl: row.imgSrc || "/placeholder.jpg",
           reviews: 0,
-          rating: 4.5,
+          rating: row.ratingAvg ?? 0,
           slug: row.slug || id,
         });
       }

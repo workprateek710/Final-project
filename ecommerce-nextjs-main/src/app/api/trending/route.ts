@@ -14,14 +14,12 @@ export async function GET() {
     const agg = await Purchase.aggregate<{
       _id: string;
       purchases: number;
-      avgRating: number;
     }>([
       { $match: { createdAt: { $gte: since } } },
       {
         $group: {
           _id: "$prodId",
           purchases: { $sum: 1 },
-          avgRating: { $avg: "$rating" },
         },
       },
       { $sort: { purchases: -1 } },
@@ -44,7 +42,7 @@ export async function GET() {
           price: p.price,
           category: p.category,
           purchases: row.purchases,
-          avgRating: Math.round(row.avgRating * 10) / 10,
+          avgRating: Number(p.ratingAvg ?? 0),
           reviews: p.reviews ?? 0,
         };
       })

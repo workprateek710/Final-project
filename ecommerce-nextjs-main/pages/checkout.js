@@ -183,7 +183,7 @@ const CheckoutContent = () => {
     try {
       await axios.post("/api/purchases", {
         userId,
-        items: products.map((p) => ({ prodId: p.id, rating: 5, quantity: p.quantity })),
+        items: products.map((p) => ({ prodId: p.id, quantity: p.quantity })),
       });
       dispatch(clearCart());
       alert("Order placed! Thank you for your purchase.");

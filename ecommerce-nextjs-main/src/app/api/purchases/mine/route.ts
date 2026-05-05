@@ -1,7 +1,10 @@
 import Purchase from "@/libs/models/Purchase";
 import Product from "@/libs/models/Product";
+import ProductRating from "@/libs/models/ProductRating";
 import { connectMongoDB } from "@/libs/MongoConnect";
 import { NextRequest, NextResponse } from "next/server";
+
+type RatingRow = { prodId: string; rating: number };
 
 /** GET /api/purchases/mine?userId=xxx
  *  Returns purchase records enriched with product details, sorted newest-first.
@@ -23,13 +26,17 @@ export async function GET(request: NextRequest) {
     const products = await Product.find({ prodId: { $in: prodIds } })
       .select("prodId name imgSrc price slug brand subcategory")
       .lean();
+    const ratings = await ProductRating.find({ userId, prodId: { $in: prodIds } })
+      .select("prodId rating")
+      .lean<RatingRow[]>();
 
     const productMap = Object.fromEntries(products.map((p) => [p.prodId, p]));
+    const ratingMap = new Map(ratings.map((r) => [r.prodId, r.rating]));
 
     const enriched = purchases.map((p) => ({
       _id: String(p._id),
       prodId: p.prodId,
-      rating: p.rating,
+      rating: ratingMap.get(p.prodId),
       createdAt: p.createdAt,
       product: productMap[p.prodId] ?? null,
     }));

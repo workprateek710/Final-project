@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectMongoDB } from "@/libs/MongoConnect";
 import ProductRating from "@/libs/models/ProductRating";
 import Product from "@/libs/models/Product";
+import Purchase from "@/libs/models/Purchase";
 
 type AggregateRow = { _id: string; avg: number; count: number };
 
@@ -81,6 +82,7 @@ export async function POST(request: NextRequest) {
       { rating: Math.round(ratingNum) },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
+    await Purchase.updateMany({ prodId, userId }, { rating: Math.round(ratingNum) });
 
     const summary = await getAggregateForProduct(prodId);
     if (summary.hasRatings && summary.ratingAvg !== null) {

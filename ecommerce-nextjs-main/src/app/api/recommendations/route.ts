@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Purchase from "@/libs/models/Purchase";
 import Product from "@/libs/models/Product";
+import ProductRating from "@/libs/models/ProductRating";
 import { connectMongoDB } from "@/libs/MongoConnect";
 import { buildTfIdfVectors, cosineSimilarity } from "@/utils/recommendationScoring";
 
@@ -26,11 +27,11 @@ type ProductDoc = {
 
 type PurchaseDoc = {
   prodId: string;
-  rating?: number;
   createdAt?: Date;
 };
 
 type ActivityRow = { _id: string; purchases: number };
+type RatingRow = { prodId: string; rating: number };
 
 /**
  * Content-based recommender:
@@ -77,6 +78,11 @@ export async function GET(request: NextRequest) {
     const vectors = buildTfIdfVectors(products);
     const purchased = new Set(userPurchases.map((purchase) => purchase.prodId));
     const recentPurchases = userPurchases.slice(0, RECENT_PURCHASE_CONTEXT);
+    const ratingRows = await ProductRating.find({
+      userId,
+      prodId: { $in: [...new Set(recentPurchases.map((purchase) => purchase.prodId))] },
+    }).lean<RatingRow[]>();
+    const explicitRatings = new Map(ratingRows.map((row) => [row.prodId, row.rating]));
     const scores = new Map<string, number>();
 
     recentPurchases.forEach((purchase, purchaseIndex) => {
@@ -84,7 +90,8 @@ export async function GET(request: NextRequest) {
       if (sourceIndex === undefined) return;
 
       const recencyWeight = 1 / (1 + purchaseIndex * 0.15);
-      const ratingWeight = Math.max(1, Number(purchase.rating ?? 5)) / 5;
+      const explicitRating = explicitRatings.get(purchase.prodId);
+      const ratingWeight = explicitRating ? Math.max(1, explicitRating) / 5 : 1;
       const sourceVector = vectors[sourceIndex];
 
       products.forEach((candidate, candidateIndex) => {
@@ -131,7 +138,7 @@ export async function GET(request: NextRequest) {
       purchaseCount: userPurchases.length,
       recommendationBasis: recentPurchases.map((purchase) => ({
         prodId: purchase.prodId,
-        rating: purchase.rating,
+        rating: explicitRatings.get(purchase.prodId),
         createdAt: purchase.createdAt,
       })),
       recommendations,

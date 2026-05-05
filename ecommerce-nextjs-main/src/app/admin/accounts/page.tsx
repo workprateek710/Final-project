@@ -21,6 +21,16 @@ type RawUserRow = {
 
 export const dynamic = "force-dynamic";
 
+const ADMIN_TIME_ZONE = "America/Los_Angeles";
+
+function formatAdminDate(value: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "short",
+    timeStyle: "medium",
+    timeZone: ADMIN_TIME_ZONE,
+  }).format(new Date(value));
+}
+
 export default async function AccountsPage() {
   await connectMongoDB();
   const [usersRaw, purchaseCounts, reviewCounts] = await Promise.all([
@@ -64,9 +74,7 @@ export default async function AccountsPage() {
                 <td className="py-2">{user.email}</td>
                 <td className="py-2">{user.purchasesCount}</td>
                 <td className="py-2">{user.reviewsCount}</td>
-                <td className="py-2">
-                  {new Date(user.createdAt).toLocaleString()}
-                </td>
+                <td className="py-2">{formatAdminDate(user.createdAt)}</td>
               </tr>
             ))}
             {users.length === 0 && (

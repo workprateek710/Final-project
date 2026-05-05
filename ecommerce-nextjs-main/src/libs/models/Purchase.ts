@@ -8,7 +8,7 @@ const purchaseSchema = new Schema(
   {
     userId: { type: String, required: true, index: true },
     prodId: { type: String, required: true, index: true },
-    rating: { type: Number, required: true, min: 1, max: 5, default: 5 },
+    rating: { type: Number, min: 1, max: 5 },
   },
   { timestamps: true }
 );

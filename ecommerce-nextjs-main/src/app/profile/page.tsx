@@ -16,7 +16,7 @@ type Profile = {
 };
 type SavedAddress = { _id: string; label: string; name: string; address: string; city: string; zip: string; country: string; };
 type SavedPayment = { _id: string; label: string; cardholderName: string; cardLast4: string; expiry: string; cardType: string; };
-type PurchaseRow = { _id: string; prodId: string; rating: number; createdAt: string; product: { name: string; imgSrc: string; price: string; slug: string; brand?: string; } | null; };
+type PurchaseRow = { _id: string; prodId: string; rating?: number; createdAt: string; product: { name: string; imgSrc: string; price: string; slug: string; brand?: string; } | null; };
 type Tab = "info" | "addresses" | "payments" | "orders" | "account";
 
 /* ─── helpers ────────────────────────────────────────────── */
@@ -420,7 +420,11 @@ export default function ProfilePage() {
                       <div className="flex-1 min-w-0">
                         {p.product ? <Link href={`/shop/${p.product.slug}`} className="font-semibold text-slate-900 hover:text-accent text-sm line-clamp-1 transition">{p.product.name}</Link> : <p className="text-slate-400 text-sm italic">Product removed</p>}
                         <p className="text-xs text-slate-400 mt-0.5">{new Date(p.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
-                        <div className="flex gap-0.5 mt-1 text-amber-400 text-xs">{Array.from({ length: 5 }).map((_, i) => <span key={i} className={i < p.rating ? "opacity-100" : "opacity-20"}>★</span>)}</div>
+                        {p.rating ? (
+                          <div className="flex gap-0.5 mt-1 text-amber-400 text-xs">{Array.from({ length: 5 }).map((_, i) => <span key={i} className={i < p.rating! ? "opacity-100" : "opacity-20"}>★</span>)}</div>
+                        ) : (
+                          <p className="text-xs text-slate-400 mt-1">Not rated yet</p>
+                        )}
                       </div>
                       {p.product?.price && <span className="font-bold text-slate-900 shrink-0">${p.product.price}</span>}
                     </div>

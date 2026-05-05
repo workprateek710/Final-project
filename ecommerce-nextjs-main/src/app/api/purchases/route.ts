@@ -6,7 +6,7 @@ type Line = { prodId: string; rating?: number; quantity?: number };
 
 /**
  * Records checkout lines as purchase history.
- * Each line creates one purchase document (rating defaults to 5).
+ * Ratings are added later only when the user explicitly rates a product.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -18,13 +18,12 @@ export async function POST(request: NextRequest) {
     }
 
     await connectMongoDB();
-    const docs: { userId: string; prodId: string; rating: number }[] = [];
+    const docs: { userId: string; prodId: string }[] = [];
     for (const line of items) {
       if (!line?.prodId) continue;
-      const rating = Math.min(5, Math.max(1, Number(line.rating) || 5));
       const qty = Math.min(20, Math.max(1, Number(line.quantity) || 1));
       for (let i = 0; i < qty; i++) {
-        docs.push({ userId, prodId: line.prodId, rating });
+        docs.push({ userId, prodId: line.prodId });
       }
     }
     if (docs.length === 0) {
