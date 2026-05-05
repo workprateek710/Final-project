@@ -1,6 +1,5 @@
 "use client";
 
-import axios from "axios";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -27,11 +26,15 @@ export default function RecommendationsPanel({ userId }: { userId: string }) {
     let cancelled = false;
     (async () => {
       try {
-        const res = await axios.get("/api/recommendations", { params: { user_id: userId } });
+        const res = await fetch(`/api/recommendations?user_id=${encodeURIComponent(userId)}`, {
+          cache: "no-store",
+        });
+        const data = await res.json();
         if (cancelled) return;
-        setRows(res.data?.recommendations ?? []);
-        setShowEmptyHint(res.data?.reason === "insufficient_history");
+        setRows(data?.recommendations ?? []);
+        setShowEmptyHint(data?.reason === "insufficient_history");
       } catch {
+        if (cancelled) return;
         setErr("Recommendations are temporarily unavailable. Please try again shortly.");
       } finally {
         if (!cancelled) setLoading(false);

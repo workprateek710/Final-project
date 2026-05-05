@@ -24,17 +24,23 @@ export default function TrendingStrip() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
       try {
         const res = await fetch("/api/trending", { cache: "no-store" });
         const data = await res.json();
+        if (cancelled) return;
         setRows(data.trending ?? []);
       } catch {
+        if (cancelled) return;
         setErr("Could not load trending.");
       } finally {
-        setReady(true);
+        if (!cancelled) setReady(true);
       }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (err) return <p className="text-center text-red-500 py-4 text-sm">{err}</p>;

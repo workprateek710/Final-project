@@ -34,6 +34,7 @@ export default function RecommendationsPage() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
+    let cancelled = false;
     const userId = typeof window !== "undefined" ? localStorage.getItem("user") : null;
     if (!userId) {
       setMessage("Sign in to see recommendations based on your purchase history.");
@@ -46,14 +47,22 @@ export default function RecommendationsPage() {
     })
       .then((res) => res.json())
       .then((data) => {
+        if (cancelled) return;
         setProducts(data.recommendations ?? []);
         setBasis(data.recommendationBasis ?? []);
         if (data.reason === "insufficient_history") {
           setMessage("Recommendations unlock after you make a purchase.");
         }
       })
-      .catch(() => setMessage("Recommendations are temporarily unavailable."))
-      .finally(() => setLoading(false));
+      .catch(() => {
+        if (!cancelled) setMessage("Recommendations are temporarily unavailable.");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (

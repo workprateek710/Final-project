@@ -3,20 +3,20 @@ import Purchase from "@/libs/models/Purchase";
 import { connectMongoDB } from "@/libs/MongoConnect";
 import ProductTile, { type TileProduct } from "@/components/catalog/ProductTile";
 import Link from "next/link";
+import { SORT_OPTIONS, parseSortOption } from "@/constants/catalogFilters";
 
 export const dynamic = "force-dynamic";
 
-type SortOption = "popular" | "reviews" | "rating" | "price-low" | "price-high";
 type Props = {
   searchParams:
-    | Promise<{ subcategory?: string; sort?: SortOption }>
-    | { subcategory?: string; sort?: SortOption };
+    | Promise<{ subcategory?: string; sort?: string }>
+    | { subcategory?: string; sort?: string };
 };
 
 export default async function ShopPage({ searchParams }: Props) {
   const sp = await Promise.resolve(searchParams);
   const subcategory = sp?.subcategory;
-  const sort = sp?.sort;
+  const sort = parseSortOption(sp?.sort);
   await connectMongoDB();
   const filter: Record<string, string> = { category: "Electronics" };
   if (subcategory) filter.subcategory = subcategory;
@@ -61,14 +61,6 @@ export default async function ShopPage({ searchParams }: Props) {
   const subcategories = Array.from(
     new Set(allSubcategories.filter(Boolean).map(String))
   ).sort((a, b) => a.localeCompare(b));
-
-  const sortOptions: { label: string; value: SortOption }[] = [
-    { label: "Most purchased", value: "popular" },
-    { label: "Most reviewed", value: "reviews" },
-    { label: "Highest rated", value: "rating" },
-    { label: "Price: low to high", value: "price-low" },
-    { label: "Price: high to low", value: "price-high" },
-  ];
 
   return (
     <div className="bg-slate-50 min-h-screen">
@@ -122,7 +114,7 @@ export default async function ShopPage({ searchParams }: Props) {
             Filters
           </p>
           <div className="flex flex-wrap gap-2">
-            {sortOptions.map((option) => (
+            {SORT_OPTIONS.map((option) => (
               <Link
                 key={option.value}
                 href={`/shop?${subcategory ? `subcategory=${encodeURIComponent(subcategory)}&` : ""}sort=${option.value}`}

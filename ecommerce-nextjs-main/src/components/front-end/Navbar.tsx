@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Dispatch, SetStateAction, useState, useEffect, useCallback } from "react";
+import React, { Dispatch, SetStateAction, useState, useEffect, useCallback, useMemo } from "react";
 import { useAppSelector, useAppDispatch } from "@/redux/hooks";
 import { AiOutlineShoppingCart, AiOutlineUser } from "react-icons/ai";
 import { BsSearch } from "react-icons/bs";
@@ -8,6 +8,7 @@ import { addToCart } from "@/redux/features/cartSlice";
 import Link from "next/link";
 import type { CatalogProduct } from "@/types/product";
 import { ELECTRONICS_SUBCATEGORIES } from "@/constants/productCategories";
+import { SORT_OPTIONS } from "@/constants/catalogFilters";
 
 type NavbarProduct = {
   id: string;
@@ -40,16 +41,17 @@ const Navbar = ({ setShowCart }: { setShowCart: Dispatch<SetStateAction<boolean>
   const cartCount = useAppSelector((state) => state.cartReducer.length);
   const dispatch = useAppDispatch();
   const [isHydrated, setIsHydrated] = useState(false);
+  const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredProducts, setFilteredProducts] = useState<NavbarProduct[]>([]);
   const [suggestionProducts, setSuggestionProducts] = useState<NavbarProduct[]>([]);
   const [catalog, setCatalog] = useState<NavbarProduct[]>([]);
   const [searchFocused, setSearchFocused] = useState(false);
 
-  const isLoggedIn = typeof window !== "undefined" && localStorage.getItem("user");
+  const isLoggedIn = currentUser;
 
   useEffect(() => {
     setIsHydrated(true);
+    setCurrentUser(localStorage.getItem("user"));
   }, []);
 
   useEffect(() => {
@@ -118,18 +120,18 @@ const Navbar = ({ setShowCart }: { setShowCart: Dispatch<SetStateAction<boolean>
   }, []);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const query = e.target.value.toLowerCase();
-    setSearchQuery(query);
-    if (query.trim()) {
-      const filtered = catalog.filter(
-        (product) =>
-          product.name.toLowerCase().includes(query) || product.category.toLowerCase().includes(query)
-      );
-      setFilteredProducts(filtered);
-    } else {
-      setFilteredProducts([]);
-    }
+    setSearchQuery(e.target.value);
   };
+
+  const normalizedSearch = searchQuery.trim().toLowerCase();
+  const filteredProducts = useMemo(() => {
+    if (!normalizedSearch) return [];
+    return catalog.filter(
+      (product) =>
+        product.name.toLowerCase().includes(normalizedSearch) ||
+        product.category.toLowerCase().includes(normalizedSearch)
+    );
+  }, [catalog, normalizedSearch]);
 
   const handleAddToCart = (product: NavbarProduct) => {
     dispatch(
@@ -231,6 +233,7 @@ const Navbar = ({ setShowCart }: { setShowCart: Dispatch<SetStateAction<boolean>
                     type="button"
                     onClick={() => {
                       localStorage.removeItem("user");
+                      setCurrentUser(null);
                       window.location.href = "/login";
                     }}
                     className="text-red-600 hover:text-red-800 text-sm font-medium"
@@ -322,21 +325,15 @@ const Navbar = ({ setShowCart }: { setShowCart: Dispatch<SetStateAction<boolean>
                 Filters
               </summary>
               <div className="absolute left-0 top-full z-50 mt-2 grid w-56 grid-cols-1 gap-1 rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
-                <Link href="/shop?sort=popular" className="rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-accent">
-                  Most purchased
-                </Link>
-                <Link href="/shop?sort=reviews" className="rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-accent">
-                  Most reviewed
-                </Link>
-                <Link href="/shop?sort=rating" className="rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-accent">
-                  Highest rated
-                </Link>
-                <Link href="/shop?sort=price-low" className="rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-accent">
-                  Price: low to high
-                </Link>
-                <Link href="/shop?sort=price-high" className="rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-accent">
-                  Price: high to low
-                </Link>
+                {SORT_OPTIONS.map((option) => (
+                  <Link
+                    key={option.value}
+                    href={`/shop?sort=${option.value}`}
+                    className="rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-accent"
+                  >
+                    {option.label}
+                  </Link>
+                ))}
               </div>
             </details>
             <Link href="/checkout" className="text-slate-600 hover:text-accent">
