@@ -6,7 +6,7 @@ import User from "@/libs/models/User";
 type SubcategoryRow = { _id: string; count: number };
 type UserTxRow = { _id: string; count: number };
 type ProductPurchaseRow = { _id: string; count: number; name?: string; category?: string };
-type CategoryPurchaseRow = { _id: string; count: number };
+type PurchaseSubcategoryRow = { _id: string; count: number };
 
 export const dynamic = "force-dynamic";
 
@@ -64,7 +64,7 @@ export default async function AnalyticsPage() {
     },
   ])) as ProductPurchaseRow[];
 
-  const purchaseCategories = (await Purchase.aggregate([
+  const purchaseSubcategories = (await Purchase.aggregate([
     {
       $lookup: {
         from: "products",
@@ -76,18 +76,18 @@ export default async function AnalyticsPage() {
     { $unwind: { path: "$product", preserveNullAndEmptyArrays: true } },
     {
       $project: {
-        category: {
+        subcategory: {
           $cond: [
-            { $or: [{ $eq: ["$product.category", null] }, { $eq: ["$product.category", ""] }] },
-            "Unknown",
-            "$product.category",
+            { $or: [{ $eq: ["$product.subcategory", null] }, { $eq: ["$product.subcategory", ""] }] },
+            "General",
+            "$product.subcategory",
           ],
         },
       },
     },
-    { $group: { _id: "$category", count: { $sum: 1 } } },
+    { $group: { _id: "$subcategory", count: { $sum: 1 } } },
     { $sort: { count: -1 } },
-  ])) as CategoryPurchaseRow[];
+  ])) as PurchaseSubcategoryRow[];
 
   return (
     <div className="bg-white h-[calc(100vh-96px)] rounded-lg p-4 overflow-auto">
@@ -153,15 +153,15 @@ export default async function AnalyticsPage() {
         </div>
 
         <div className="rounded-lg border border-slate-200 p-4">
-          <h3 className="font-semibold">Purchases by category</h3>
+          <h3 className="font-semibold">Purchases by subcategory</h3>
           <ul className="mt-3 space-y-2 text-sm">
-            {purchaseCategories.map((row) => (
+            {purchaseSubcategories.map((row) => (
               <li key={row._id} className="flex items-center justify-between border-b border-slate-100 pb-2">
-                <span>{row._id || "Unknown"}</span>
+                <span>{row._id || "General"}</span>
                 <span className="font-semibold">{row.count}</span>
               </li>
             ))}
-            {purchaseCategories.length === 0 && <li className="text-slate-500">No category purchase data.</li>}
+            {purchaseSubcategories.length === 0 && <li className="text-slate-500">No subcategory purchase data.</li>}
           </ul>
         </div>
       </div>
