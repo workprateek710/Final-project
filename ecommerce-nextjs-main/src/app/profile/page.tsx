@@ -565,7 +565,7 @@ export default function ProfilePage() {
             <div className="bg-white rounded-2xl border border-red-100 shadow-sm p-6 space-y-4">
               <h2 className="font-semibold text-red-600 text-lg flex items-center gap-2">⚠️ Danger zone</h2>
               <p className="text-slate-500 text-sm">
-                Permanently delete your account, saved addresses, and saved cards. Your purchase history and product ratings for this email are removed so a new account with the same email starts fresh. This cannot be undone.
+                Permanently delete your account, saved addresses, and saved cards. Past orders and reviews remain stored without your profile. This cannot be undone.
               </p>
               <div className="space-y-3">
                 <div>

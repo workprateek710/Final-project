@@ -1,12 +1,11 @@
 import User from "@/libs/models/User";
-import Purchase from "@/libs/models/Purchase";
-import ProductRating from "@/libs/models/ProductRating";
 import { requireAdminSession } from "@/libs/adminAuth";
 import { connectMongoDB } from "@/libs/MongoConnect";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
- * Admin-only: remove a storefront user and their purchase/rating rows (same userId string as checkout).
+ * Admin-only: remove a storefront user document.
+ * Purchases and ProductRating rows stay (same as self-service account deletion).
  */
 export async function DELETE(request: NextRequest) {
   try {
@@ -27,12 +26,6 @@ export async function DELETE(request: NextRequest) {
     await connectMongoDB();
     const removed = await User.findOneAndDelete({ email });
     if (!removed) return NextResponse.json({ message: "User not found" }, { status: 404 });
-
-    const activityUserId = String(removed.email ?? email).trim().toLowerCase();
-    await Promise.all([
-      Purchase.deleteMany({ userId: activityUserId }),
-      ProductRating.deleteMany({ userId: activityUserId }),
-    ]);
 
     return NextResponse.json({ message: "User deleted." });
   } catch (e) {

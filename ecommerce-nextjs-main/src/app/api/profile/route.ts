@@ -1,6 +1,4 @@
 import User from "@/libs/models/User";
-import Purchase from "@/libs/models/Purchase";
-import ProductRating from "@/libs/models/ProductRating";
 import { connectMongoDB } from "@/libs/MongoConnect";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -47,7 +45,7 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-/** DELETE /api/profile — delete account and storefront activity keyed by this email (same userId used at checkout). */
+/** DELETE /api/profile  — delete account; purchases and reviews stay keyed by userId for admin analytics */
 export async function DELETE(request: NextRequest) {
   try {
     const body = await request.json();
@@ -60,12 +58,6 @@ export async function DELETE(request: NextRequest) {
     await connectMongoDB();
     const user = await User.findOneAndDelete({ email });
     if (!user) return NextResponse.json({ message: "User not found" }, { status: 404 });
-
-    const activityUserId = String(user.email ?? email).trim().toLowerCase();
-    await Promise.all([
-      Purchase.deleteMany({ userId: activityUserId }),
-      ProductRating.deleteMany({ userId: activityUserId }),
-    ]);
 
     return NextResponse.json({ message: "Account deleted." });
   } catch (e) {

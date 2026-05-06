@@ -45,7 +45,7 @@ export default function AdminAccountsTable({ users, adminEmail, deletedSummary }
 
   const deleteUser = async (email: string, label: string) => {
     const ok = window.confirm(
-      `Delete account ${email} (${label})?\n\nTheir purchases and product ratings for this email will be removed (same as self-delete).`
+      `Delete account ${email} (${label})?\n\nTheir purchases and reviews stay on file for analytics (same as self-delete).`
     );
     if (!ok) return;
 
