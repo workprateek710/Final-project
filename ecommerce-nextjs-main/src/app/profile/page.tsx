@@ -7,6 +7,7 @@ import Link from "next/link";
 import toast from "react-hot-toast";
 import Navbar from "@/components/front-end/Navbar";
 import Footer from "@/components/front-end/Footer";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 
 /* ─── types ─────────────────────────────────────────────── */
 type Profile = {
@@ -26,6 +27,9 @@ function initials(name: string, email: string) {
   return p.length >= 2 ? (p[0][0] + p[1][0]).toUpperCase() : src.slice(0, 2).toUpperCase();
 }
 const COLORS = ["bg-violet-500","bg-blue-500","bg-emerald-500","bg-pink-500","bg-amber-500","bg-cyan-500"];
+/** Matches editable Field styling — used with PasswordInput */
+const profileSecretInputCls =
+  "w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm transition outline-none focus:border-accent focus:ring-2 focus:ring-accent/15";
 function avatarColor(email: string) {
   let h = 0; for (const c of email) h = (h * 31 + c.charCodeAt(0)) & 0xffffffff;
   return COLORS[Math.abs(h) % COLORS.length];
@@ -385,7 +389,21 @@ export default function ProfilePage() {
                   <div className="sm:col-span-2"><Field label="Cardholder name" name="cardholderName" value={payForm.cardholderName} onChange={e => setPayForm(f => ({ ...f, cardholderName: e.target.value }))} placeholder="Alex Smith" /></div>
                   <div className="sm:col-span-2"><Field label={editingPay ? "Card number (leave masked to keep same)" : "Card number (demo — do not use real cards)"} name="cardNumber" value={payForm.cardNumber} onChange={e => setPayForm(f => ({ ...f, cardNumber: e.target.value }))} placeholder="4242 4242 4242 4242" /></div>
                   <Field label="Expiry (MM/YY)" name="expiry" value={payForm.expiry} onChange={e => setPayForm(f => ({ ...f, expiry: e.target.value }))} placeholder="12/26" />
-                  <Field label="CVV (optional — demo)" name="cvv" type="password" value={payForm.cvv} onChange={e => setPayForm(f => ({ ...f, cvv: e.target.value.replace(/\D/g, "").slice(0, 4) }))} placeholder="123" />
+                  <div>
+                    <label htmlFor="pay-cvv" className="block text-xs font-medium text-slate-600 mb-1.5">CVV (optional — demo)</label>
+                    <PasswordInput
+                      id="pay-cvv"
+                      name="cvv"
+                      maxLength={4}
+                      inputMode="numeric"
+                      autoComplete="off"
+                      value={payForm.cvv}
+                      onChange={(e) => setPayForm((f) => ({ ...f, cvv: e.target.value.replace(/\D/g, "").slice(0, 4) }))}
+                      placeholder="123"
+                      visibilityLabel="CVV"
+                      inputClassName={profileSecretInputCls}
+                    />
+                  </div>
                 </div>
                 <div className="flex gap-3 pt-2 border-t border-slate-100">
                   <button onClick={() => { setShowPayForm(false); setEditingPay(null); }} className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50">Cancel</button>
@@ -494,30 +512,44 @@ export default function ProfilePage() {
                 <p className="text-slate-500 text-sm mt-0.5">Use your current password, then choose a new one (at least 8 characters).</p>
               </div>
               <div className="grid gap-4">
-                <Field
-                  label="Current password"
-                  name="pw-current"
-                  type="password"
-                  value={pwForm.current}
-                  onChange={(e) => setPwForm((f) => ({ ...f, current: e.target.value }))}
-                  placeholder="••••••••"
-                />
-                <Field
-                  label="New password"
-                  name="pw-next"
-                  type="password"
-                  value={pwForm.next}
-                  onChange={(e) => setPwForm((f) => ({ ...f, next: e.target.value }))}
-                  placeholder="At least 8 characters"
-                />
-                <Field
-                  label="Confirm new password"
-                  name="pw-confirm"
-                  type="password"
-                  value={pwForm.confirm}
-                  onChange={(e) => setPwForm((f) => ({ ...f, confirm: e.target.value }))}
-                  placeholder="Repeat new password"
-                />
+                <div>
+                  <label htmlFor="pw-current" className="block text-xs font-medium text-slate-600 mb-1.5">Current password</label>
+                  <PasswordInput
+                    id="pw-current"
+                    name="pw-current"
+                    autoComplete="current-password"
+                    value={pwForm.current}
+                    onChange={(e) => setPwForm((f) => ({ ...f, current: e.target.value }))}
+                    placeholder="••••••••"
+                    inputClassName={profileSecretInputCls}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="pw-next" className="block text-xs font-medium text-slate-600 mb-1.5">New password</label>
+                  <PasswordInput
+                    id="pw-next"
+                    name="pw-next"
+                    autoComplete="new-password"
+                    minLength={8}
+                    value={pwForm.next}
+                    onChange={(e) => setPwForm((f) => ({ ...f, next: e.target.value }))}
+                    placeholder="At least 8 characters"
+                    inputClassName={profileSecretInputCls}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="pw-confirm" className="block text-xs font-medium text-slate-600 mb-1.5">Confirm new password</label>
+                  <PasswordInput
+                    id="pw-confirm"
+                    name="pw-confirm"
+                    autoComplete="new-password"
+                    minLength={8}
+                    value={pwForm.confirm}
+                    onChange={(e) => setPwForm((f) => ({ ...f, confirm: e.target.value }))}
+                    placeholder="Repeat new password"
+                    inputClassName={profileSecretInputCls}
+                  />
+                </div>
               </div>
               <div className="flex justify-end pt-2 border-t border-slate-100">
                 <button

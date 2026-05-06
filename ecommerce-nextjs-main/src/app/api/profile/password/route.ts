@@ -3,18 +3,8 @@ import { connectMongoDB } from "@/libs/MongoConnect";
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 
-/** Mirrors credentials login fallback for seeded demo accounts */
-const SEEDED_DEMO_PASSWORDS = new Set(["12345678"]);
-
-function verifyCurrentPassword(
-  email: string,
-  plain: string,
-  passwordHash: string
-): Promise<boolean> {
-  return bcrypt.compare(plain, passwordHash).then(
-    (ok) =>
-      ok || (email.endsWith("@gmail.com") && SEEDED_DEMO_PASSWORDS.has(plain))
-  );
+function verifyCurrentPassword(plain: string, passwordHash: string): Promise<boolean> {
+  return bcrypt.compare(plain, passwordHash);
 }
 
 /** POST /api/profile/password — change password for email/password accounts */
@@ -50,7 +40,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const currentOk = await verifyCurrentPassword(email, currentPassword, doc.passwordHash);
+    const currentOk = await verifyCurrentPassword(currentPassword, doc.passwordHash);
     if (!currentOk) {
       return NextResponse.json({ message: "Current password is incorrect." }, { status: 401 });
     }

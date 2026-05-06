@@ -3,8 +3,6 @@ import bcrypt from "bcryptjs";
 import { connectMongoDB } from "@/libs/MongoConnect";
 import User from "@/libs/models/User";
 
-const SEEDED_DEMO_PASSWORDS = new Set(["12345678"]);
-
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -29,9 +27,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false, message: "Invalid email or password." }, { status: 401 });
     }
 
-    const ok =
-      await bcrypt.compare(password, user.passwordHash) ||
-      (email.endsWith("@gmail.com") && SEEDED_DEMO_PASSWORDS.has(password));
+    const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok) {
       return NextResponse.json({ ok: false, message: "Invalid email or password." }, { status: 401 });
     }

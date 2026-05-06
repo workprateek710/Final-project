@@ -8,6 +8,7 @@ import "../src/app/globals.css";
 import axios from "axios";
 import { clearCart } from "../src/redux/features/cartSlice";
 import Link from "next/link";
+import { PasswordInput } from "../src/components/ui/PasswordInput";
 
 const steps = ["Cart", "Shipping", "Payment", "Review"];
 
@@ -400,7 +401,17 @@ const CheckoutContent = () => {
                     {selectedPayId && (
                       <div>
                         <label className={labelCls}>CVV</label>
-                        <input type="text" name="cvv" value={payForm.cvv} onChange={handlePayChange} placeholder="123" maxLength={4} className={inputCls} required />
+                        <PasswordInput
+                          name="cvv"
+                          maxLength={4}
+                          inputMode="numeric"
+                          value={payForm.cvv}
+                          onChange={handlePayChange}
+                          placeholder="123"
+                          visibilityLabel="CVV"
+                          required
+                          inputClassName={inputCls}
+                        />
                       </div>
                     )}
                   </div>
@@ -428,7 +439,17 @@ const CheckoutContent = () => {
                       </div>
                       <div>
                         <label className={labelCls}>CVV</label>
-                        <input type="text" name="cvv" value={payForm.cvv} onChange={handlePayChange} placeholder="123" maxLength={4} className={inputCls} required />
+                        <PasswordInput
+                          name="cvv"
+                          maxLength={4}
+                          inputMode="numeric"
+                          value={payForm.cvv}
+                          onChange={handlePayChange}
+                          placeholder="123"
+                          visibilityLabel="CVV"
+                          required
+                          inputClassName={inputCls}
+                        />
                       </div>
                     </div>
 

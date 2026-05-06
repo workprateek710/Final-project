@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, Suspense } from "react";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 
 function SignupForm() {
   const router = useRouter();
@@ -84,15 +85,14 @@ function SignupForm() {
               <label htmlFor="signup-password" className="block text-xs font-medium text-slate-600 mb-1.5">
                 Password (min 8 characters)
               </label>
-              <input
+              <PasswordInput
                 id="signup-password"
-                type="password"
                 required
                 minLength={8}
                 autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition"
+                inputClassName="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-slate-900 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition"
                 placeholder="••••••••"
               />
             </div>

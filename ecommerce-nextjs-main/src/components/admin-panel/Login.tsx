@@ -3,6 +3,7 @@
 import { signIn } from "next-auth/react";
 import { FcGoogle } from "react-icons/fc";
 import { useState } from "react";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import Link from "next/link";
 
 const Login = () => {
@@ -51,9 +52,9 @@ const Login = () => {
               type="email"
               placeholder="Email"
             />
-            <input
-              type="password"
-              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+            <PasswordInput
+              variant="dark"
+              inputClassName="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-slate-500 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
