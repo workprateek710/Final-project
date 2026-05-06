@@ -31,8 +31,9 @@ export default async function ProductDetailPage({ params }: Props) {
   if (!doc) notFound();
 
   const priceNum = Number.parseFloat(String(doc.price)) || 0;
-  const rating = doc.ratingAvg ?? 4.5;
-  const stars = Math.round(rating);
+  const reviewsCount = doc.reviews ?? 0;
+  const displayedAvg = reviewsCount > 0 ? Number(doc.ratingAvg ?? 0) : null;
+  const stars = displayedAvg !== null ? Math.round(displayedAvg) : 0;
 
   return (
     <div className="bg-slate-50 min-h-screen">
@@ -82,22 +83,31 @@ export default async function ProductDetailPage({ params }: Props) {
 
             <h1 className="text-3xl font-bold text-slate-900 leading-snug">{doc.name}</h1>
 
-            {/* rating summary */}
+            {/* rating summary — only show aggregate when at least one review exists */}
             <div className="flex items-center gap-2 mt-3">
               <div className="flex text-amber-400 text-sm">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <span key={i} className={i < stars ? "opacity-100" : "opacity-25"}>★</span>
+                  <span
+                    key={i}
+                    className={
+                      displayedAvg !== null && i < stars ? "opacity-100" : "opacity-25"
+                    }
+                  >
+                    ★
+                  </span>
                 ))}
               </div>
               <span className="text-slate-600 text-sm">
-                {rating.toFixed(1)} · {doc.reviews} reviews
+                {displayedAvg !== null
+                  ? `${displayedAvg.toFixed(1)} · ${reviewsCount} ${reviewsCount === 1 ? "review" : "reviews"}`
+                  : "No ratings yet"}
               </span>
             </div>
 
             <ProductRatingPanel
               prodId={doc.prodId}
-              initialRatingAvg={rating}
-              initialReviews={doc.reviews ?? 0}
+              initialRatingAvg={displayedAvg ?? 0}
+              initialReviews={reviewsCount}
             />
 
             <div className="flex items-baseline gap-3 mt-5">

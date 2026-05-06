@@ -120,9 +120,13 @@ export default function RecommendationsPanel({ userId }: { userId: string }) {
               {product.name || product.prod_id}
             </p>
             <p className="text-xs text-amber-500 mt-1">
-              ★ {(product.ratingAvg ?? product.rating ?? 0).toFixed(1)}
-              {product.reviews !== undefined && (
-                <span className="text-slate-400"> · {product.reviews} reviews</span>
+              {(product.reviews ?? 0) > 0 ? (
+                <>
+                  ★ {(product.ratingAvg ?? product.rating ?? 0).toFixed(1)}
+                  <span className="text-slate-400"> · {product.reviews} reviews</span>
+                </>
+              ) : (
+                <span className="text-slate-400">No ratings yet</span>
               )}
             </p>
             {product.purchases !== undefined && (

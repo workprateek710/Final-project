@@ -46,6 +46,7 @@ export default function ProductRatingPanel({
   }, [prodId]);
 
   const roundedStars = useMemo(() => Math.round(ratingAvg), [ratingAvg]);
+  const showAggregate = reviews > 0;
 
   const submitRating = async (stars: number) => {
     if (!userId) {
@@ -79,13 +80,18 @@ export default function ProductRatingPanel({
       <div className="flex items-center gap-2">
         <div className="flex text-amber-400 text-base">
           {Array.from({ length: 5 }).map((_, i) => (
-            <span key={i} className={i < roundedStars ? "opacity-100" : "opacity-25"}>
+            <span
+              key={i}
+              className={showAggregate && i < roundedStars ? "opacity-100" : "opacity-25"}
+            >
               ★
             </span>
           ))}
         </div>
         <span className="text-slate-700 text-sm font-medium">
-          {ratingAvg.toFixed(1)} · {reviews} {reviews === 1 ? "review" : "reviews"}
+          {showAggregate
+            ? `${ratingAvg.toFixed(1)} · ${reviews} ${reviews === 1 ? "review" : "reviews"}`
+            : "No ratings yet"}
         </span>
       </div>
 

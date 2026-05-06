@@ -22,20 +22,37 @@ type NavbarProduct = {
 };
 
 function mapCatalog(p: CatalogProduct): NavbarProduct {
+  const reviewsCount = p.reviews ?? 0;
   return {
     id: p.prodId,
     name: p.name,
     category: p.subcategory || p.category,
     price: Number.parseFloat(p.price) || 0,
     imageUrl: p.imgSrc,
-    reviews: p.reviews ?? 0,
-    rating: p.ratingAvg ?? 4.5,
+    reviews: reviewsCount,
+    rating: reviewsCount > 0 ? Number(p.ratingAvg ?? 0) : 0,
     slug: p.slug,
   };
 }
 
-type TrendRow = { prodId: string; slug: string; name: string; imgSrc: string; price: string; avgRating?: number };
-type RecRow = { prod_id: string; name?: string; imgSrc?: string; slug?: string; price?: string; ratingAvg?: number };
+type TrendRow = {
+  prodId: string;
+  slug: string;
+  name: string;
+  imgSrc: string;
+  price: string;
+  avgRating?: number;
+  reviews?: number;
+};
+type RecRow = {
+  prod_id: string;
+  name?: string;
+  imgSrc?: string;
+  slug?: string;
+  price?: string;
+  ratingAvg?: number;
+  reviews?: number;
+};
 
 const Navbar = ({ setShowCart }: { setShowCart: Dispatch<SetStateAction<boolean>> }) => {
   const cartCount = useAppSelector((state) => state.cartReducer.length);
@@ -87,14 +104,15 @@ const Navbar = ({ setShowCart }: { setShowCart: Dispatch<SetStateAction<boolean>
       for (const row of (tJson.trending ?? []) as TrendRow[]) {
         if (!row?.prodId || seen.has(row.prodId)) continue;
         seen.add(row.prodId);
+        const rev = Number(row.reviews ?? 0);
         merged.push({
           id: row.prodId,
           name: row.name,
           category: "Trending",
           price: Number.parseFloat(String(row.price)) || 0,
           imageUrl: row.imgSrc,
-          reviews: 0,
-          rating: row.avgRating ?? 0,
+          reviews: rev,
+          rating: rev > 0 ? Number(row.avgRating ?? 0) : 0,
           slug: row.slug,
         });
       }
@@ -102,14 +120,15 @@ const Navbar = ({ setShowCart }: { setShowCart: Dispatch<SetStateAction<boolean>
         const id = row?.prod_id;
         if (!id || seen.has(id)) continue;
         seen.add(id);
+        const rev = Number(row.reviews ?? 0);
         merged.push({
           id,
           name: row.name || id,
           category: "Recommended",
           price: Number.parseFloat(String(row.price ?? "0")) || 0,
           imageUrl: row.imgSrc || "/placeholder.jpg",
-          reviews: 0,
-          rating: row.ratingAvg ?? 0,
+          reviews: rev,
+          rating: rev > 0 ? Number(row.ratingAvg ?? 0) : 0,
           slug: row.slug || id,
         });
       }

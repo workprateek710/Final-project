@@ -140,7 +140,11 @@ export default function RecommendationsPage() {
                   <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
                     <span>{product.purchases} purchases</span>
                     <span>{product.reviews} reviews</span>
-                    <span>★ {product.ratingAvg.toFixed(1)}</span>
+                    {product.reviews > 0 ? (
+                      <span>★ {product.ratingAvg.toFixed(1)}</span>
+                    ) : (
+                      <span>No ratings yet</span>
+                    )}
                   </div>
                   <p className="mt-3 text-lg font-bold text-accent">${product.price}</p>
                 </div>

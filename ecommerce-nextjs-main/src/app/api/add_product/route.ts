@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       subcategory: subcategory ?? "General",
       description: description ?? "",
       brand: brand ?? "",
-      ratingAvg: ratingAvg ?? 4.5,
+      ratingAvg: ratingAvg ?? 0,
       reviews: reviews ?? 0,
       stock: stock ?? 0,
       featured: Boolean(featured),

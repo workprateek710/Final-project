@@ -12,7 +12,7 @@ const productSchema = new Schema(
     price: { type: String, required: true },
     description: { type: String, default: "" },
     brand: { type: String, default: "" },
-    ratingAvg: { type: Number, default: 4.5 },
+    ratingAvg: { type: Number, default: 0 },
     reviews: { type: Number, default: 0 },
     stock: { type: Number, default: 0 },
     featured: { type: Boolean, default: false },

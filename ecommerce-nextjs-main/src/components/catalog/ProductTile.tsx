@@ -16,8 +16,9 @@ export type TileProduct = {
 
 export default function ProductTile({ p }: { p: TileProduct }) {
   const priceNum = Number.parseFloat(p.price) || 0;
-  const rating = p.ratingAvg ?? 4.5;
-  const stars = Math.round(rating);
+  const reviewsCount = p.reviews ?? 0;
+  const rating = reviewsCount > 0 ? Number(p.ratingAvg ?? 0) : null;
+  const stars = rating !== null ? Math.round(rating) : 0;
 
   return (
     <article className="group flex flex-col bg-white rounded-2xl border border-slate-100 hover:border-accent/30 hover:shadow-xl hover:shadow-slate-200/60 transition-all duration-200 overflow-hidden">
@@ -50,10 +51,17 @@ export default function ProductTile({ p }: { p: TileProduct }) {
         <div className="flex items-center gap-1.5">
           <div className="flex text-amber-400 text-xs">
             {Array.from({ length: 5 }).map((_, i) => (
-              <span key={i} className={i < stars ? "opacity-100" : "opacity-25"}>★</span>
+              <span
+                key={i}
+                className={rating !== null && i < stars ? "opacity-100" : "opacity-25"}
+              >
+                ★
+              </span>
             ))}
           </div>
-          <span className="text-slate-400 text-xs">{rating.toFixed(1)} ({p.reviews ?? 0})</span>
+          <span className="text-slate-400 text-xs">
+            {rating !== null ? `${rating.toFixed(1)} (${reviewsCount})` : "No ratings yet"}
+          </span>
         </div>
 
         <div className="mt-auto flex items-center justify-between gap-2 pt-3 border-t border-slate-50">

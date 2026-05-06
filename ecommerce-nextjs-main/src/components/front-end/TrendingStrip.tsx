@@ -73,7 +73,8 @@ export default function TrendingStrip() {
               {t.name}
             </p>
             <p className="text-xs text-slate-500 mt-1">
-              {t.purchases} purchases · {t.reviews} reviews · ★ {t.avgRating.toFixed(1)}
+              {t.purchases} purchases · {t.reviews} reviews ·{" "}
+              {t.reviews > 0 ? <>★ {t.avgRating.toFixed(1)}</> : <>No ratings yet</>}
             </p>
             <p className="text-accent font-bold text-sm mt-1">${t.price}</p>
           </Link>
