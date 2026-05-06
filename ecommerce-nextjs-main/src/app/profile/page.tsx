@@ -156,11 +156,13 @@ export default function ProfilePage() {
     if (!userId) return; setSaving(true);
     try {
       if (editingPay) {
-        const res = await fetch(`/api/profile/payments/${editingPay}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: userId, label: payForm.label, cardholderName: payForm.cardholderName, expiry: payForm.expiry }) });
+        const res = await fetch(`/api/profile/payments/${editingPay}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: userId, label: payForm.label, cardholderName: payForm.cardholderName, expiry: payForm.expiry, cardNumber: payForm.cardNumber }) });
+        if (!res.ok) throw new Error();
         const d = await res.json(); setPayments(d.payments);
         toast.success("Payment updated!");
       } else {
         const res = await fetch("/api/profile/payments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: userId, ...payForm }) });
+        if (!res.ok) throw new Error();
         const d = await res.json(); setPayments(d.payments);
         toast.success("Card saved!");
       }
@@ -172,13 +174,18 @@ export default function ProfilePage() {
     if (!userId) return;
     try {
       const res = await fetch(`/api/profile/payments/${id}`, { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: userId }) });
+      if (!res.ok) throw new Error();
       const d = await res.json(); setPayments(d.payments);
       toast.success("Card removed.");
     } catch { toast.error("Delete failed."); }
   };
 
   const startEditPay = (p: SavedPayment) => {
-    setPayForm({ label: p.label, cardholderName: p.cardholderName, cardNumber: "", expiry: p.expiry });
+    if (!p._id) {
+      toast.error("This saved card is missing an ID. Refresh and try again.");
+      return;
+    }
+    setPayForm({ label: p.label, cardholderName: p.cardholderName, cardNumber: `•••• •••• •••• ${p.cardLast4}`, expiry: p.expiry });
     setEditingPay(p._id); setShowPayForm(true);
   };
 
@@ -342,14 +349,11 @@ export default function ProfilePage() {
 
             {showPayForm && (
               <div className="bg-white rounded-2xl border border-accent/30 shadow-sm p-6 space-y-4">
-                <h3 className="font-semibold text-slate-900">{editingPay ? "Edit card details" : "Add new card"}</h3>
-                {editingPay && <p className="text-xs text-slate-500 bg-slate-50 rounded-lg px-3 py-2">You can update the label, name, and expiry. To change the card number, delete this card and add a new one.</p>}
+                <h3 className="font-semibold text-slate-900">{editingPay ? "Edit card" : "Add new card"}</h3>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="sm:col-span-2"><Field label="Card nickname (e.g. Personal Visa, Work Amex)" name="label" value={payForm.label} onChange={e => setPayForm(f => ({ ...f, label: e.target.value }))} placeholder="Personal Visa" /></div>
                   <div className="sm:col-span-2"><Field label="Cardholder name" name="cardholderName" value={payForm.cardholderName} onChange={e => setPayForm(f => ({ ...f, cardholderName: e.target.value }))} placeholder="Alex Smith" /></div>
-                  {!editingPay && (
-                    <div className="sm:col-span-2"><Field label="Card number (demo — do not use real cards)" name="cardNumber" value={payForm.cardNumber} onChange={e => setPayForm(f => ({ ...f, cardNumber: e.target.value }))} placeholder="4242 4242 4242 4242" /></div>
-                  )}
+                  <div className="sm:col-span-2"><Field label={editingPay ? "Card number (leave masked to keep same)" : "Card number (demo — do not use real cards)"} name="cardNumber" value={payForm.cardNumber} onChange={e => setPayForm(f => ({ ...f, cardNumber: e.target.value }))} placeholder="4242 4242 4242 4242" /></div>
                   <Field label="Expiry (MM/YY)" name="expiry" value={payForm.expiry} onChange={e => setPayForm(f => ({ ...f, expiry: e.target.value }))} placeholder="12/26" />
                 </div>
                 <div className="flex gap-3 pt-2 border-t border-slate-100">

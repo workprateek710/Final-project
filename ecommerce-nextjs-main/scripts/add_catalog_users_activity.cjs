@@ -218,6 +218,7 @@ function randomRecentDate() {
 
 function makeAddress(name) {
   return {
+    _id: new mongoose.Types.ObjectId(),
     label: "Home",
     name,
     address: `${randomInt(100, 9999)} ${pick(STREETS)}`,
@@ -231,6 +232,7 @@ function makePayment(name) {
   const cardType = pick(CARD_TYPES);
   const last4 = String(randomInt(1000, 9999));
   return {
+    _id: new mongoose.Types.ObjectId(),
     label: `${cardType.toUpperCase()} ${last4}`,
     cardholderName: name,
     cardLast4: last4,

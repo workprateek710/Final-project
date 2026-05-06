@@ -68,10 +68,12 @@ const ProductRow = ({
       <td>${product.price}</td>
       <td className="py-2">
         <Image
+          key={product.imgSrc}
           src={product.imgSrc}
           width={40}
           height={40}
           alt="product-image"
+          unoptimized={product.imgSrc.startsWith("data:")}
         />
       </td>
       <td>

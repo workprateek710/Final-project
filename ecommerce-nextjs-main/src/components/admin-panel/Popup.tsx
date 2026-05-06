@@ -63,10 +63,13 @@ const Popup = ({ setOpenPopup, setUpdateTable }: PropsType) => {
     axios
       .put(`/api/edit_product/${productData._id}`, inputData)
       .then(() => {
-        if (oldFileKey && newFileKey && oldFileKey !== newFileKey) {
-          if (oldFileKey.startsWith("local:") || oldFileKey.startsWith("inline:")) {
-            return;
-          }
+        if (
+          oldFileKey &&
+          newFileKey &&
+          oldFileKey !== newFileKey &&
+          !oldFileKey.startsWith("local:") &&
+          !oldFileKey.startsWith("inline:")
+        ) {
           const cleanupEndpoint = oldFileKey.startsWith("localupload:")
             ? "/api/local-upload"
             : "/api/uploadthing";

@@ -68,6 +68,7 @@ function pick(arr) {
 
 function makeAddress(name) {
   return {
+    _id: new mongoose.Types.ObjectId(),
     label: "Home",
     name,
     address: `${randomInt(100, 9999)} ${pick(STREETS)}`,
@@ -81,6 +82,7 @@ function makePayment() {
   const cardType = pick(CARD_TYPES);
   const last4 = String(randomInt(1000, 9999));
   return {
+    _id: new mongoose.Types.ObjectId(),
     label: `${cardType.toUpperCase()} ${last4}`,
     cardholderName: `${pick(FIRST_NAMES)} ${pick(LAST_NAMES)}`,
     cardLast4: last4,

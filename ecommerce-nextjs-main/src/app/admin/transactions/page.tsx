@@ -14,7 +14,7 @@ type ProductRef = {
   prodId: string;
   name: string;
   price: string;
-  category?: string;
+  subcategory?: string;
 };
 
 type RatingRef = {
@@ -45,7 +45,7 @@ export default async function TransactionsPage() {
   const prodIds = [...new Set(purchases.map((p) => p.prodId).filter(Boolean))];
   const products = (await Product.find(
     { prodId: { $in: prodIds } },
-    { prodId: 1, name: 1, price: 1, category: 1 }
+    { prodId: 1, name: 1, price: 1, subcategory: 1 }
   ).lean()) as unknown as ProductRef[];
   const ratings = (await ProductRating.find(
     {
@@ -68,7 +68,7 @@ export default async function TransactionsPage() {
               <th className="text-left py-2">Date</th>
               <th className="text-left py-2">User</th>
               <th className="text-left py-2">Product</th>
-              <th className="text-left py-2">Category</th>
+              <th className="text-left py-2">Subcategory</th>
               <th className="text-left py-2">Price</th>
               <th className="text-left py-2">Rating</th>
             </tr>
@@ -82,7 +82,7 @@ export default async function TransactionsPage() {
                   <td className="py-2">{formatAdminDate(tx.createdAt)}</td>
                   <td className="py-2">{tx.userId}</td>
                   <td className="py-2">{p?.name || tx.prodId}</td>
-                  <td className="py-2">{p?.category || "—"}</td>
+                  <td className="py-2">{p?.subcategory || "General"}</td>
                   <td className="py-2">{p?.price ? `$${p.price}` : "—"}</td>
                   <td className="py-2">{rating ?? "Not rated"}</td>
                 </tr>
