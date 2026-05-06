@@ -15,7 +15,7 @@ type Profile = {
   createdAt: string;
 };
 type SavedAddress = { _id: string; label: string; name: string; address: string; city: string; zip: string; country: string; };
-type SavedPayment = { _id: string; label: string; cardholderName: string; cardLast4: string; expiry: string; cardType: string; };
+type SavedPayment = { _id: string; label: string; cardholderName: string; cardLast4: string; expiry: string; cardType: string; cvv?: string; };
 type PurchaseRow = { _id: string; prodId: string; rating?: number; createdAt: string; product: { name: string; imgSrc: string; price: string; slug: string; brand?: string; } | null; };
 type Tab = "info" | "addresses" | "payments" | "orders" | "account";
 
@@ -52,7 +52,7 @@ function Field({ label, name, value, onChange, type = "text", placeholder = "", 
 }
 
 const emptyAddr = () => ({ label: "", name: "", address: "", city: "", zip: "", country: "" });
-const emptyPay  = () => ({ label: "", cardholderName: "", cardNumber: "", expiry: "" });
+const emptyPay  = () => ({ label: "", cardholderName: "", cardNumber: "", expiry: "", cvv: "" });
 
 /* ─── Page ────────────────────────────────────────────────── */
 export default function ProfilePage() {
@@ -158,7 +158,7 @@ export default function ProfilePage() {
     if (!userId) return; setSaving(true);
     try {
       if (editingPay) {
-        const res = await fetch(`/api/profile/payments/${editingPay}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: userId, label: payForm.label, cardholderName: payForm.cardholderName, expiry: payForm.expiry, cardNumber: payForm.cardNumber }) });
+        const res = await fetch(`/api/profile/payments/${editingPay}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: userId, label: payForm.label, cardholderName: payForm.cardholderName, expiry: payForm.expiry, cardNumber: payForm.cardNumber, cvv: payForm.cvv }) });
         if (!res.ok) throw new Error();
         const d = await res.json(); setPayments(d.payments);
         toast.success("Payment updated!");
@@ -187,7 +187,7 @@ export default function ProfilePage() {
       toast.error("This saved card is missing an ID. Refresh and try again.");
       return;
     }
-    setPayForm({ label: p.label, cardholderName: p.cardholderName, cardNumber: `•••• •••• •••• ${p.cardLast4}`, expiry: p.expiry });
+    setPayForm({ label: p.label, cardholderName: p.cardholderName, cardNumber: `•••• •••• •••• ${p.cardLast4}`, expiry: p.expiry, cvv: p.cvv ?? "" });
     setEditingPay(p._id); setShowPayForm(true);
   };
 
@@ -369,7 +369,7 @@ export default function ProfilePage() {
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex items-center justify-between">
               <div>
                 <h2 className="font-semibold text-slate-900 text-lg">Payment methods</h2>
-                <p className="text-slate-500 text-sm mt-0.5">Only the last 4 digits and expiry are stored. CVV is never saved.</p>
+                <p className="text-slate-500 text-sm mt-0.5">Demo app: last 4 digits, expiry, and CVV can be saved so checkout stays quick. Do not use real card data.</p>
               </div>
               <button onClick={() => { setPayForm(emptyPay()); setEditingPay(null); setShowPayForm(true); }}
                 className="rounded-xl bg-accent text-white px-4 py-2 text-sm font-semibold hover:bg-blue-600 transition shrink-0">
@@ -385,6 +385,7 @@ export default function ProfilePage() {
                   <div className="sm:col-span-2"><Field label="Cardholder name" name="cardholderName" value={payForm.cardholderName} onChange={e => setPayForm(f => ({ ...f, cardholderName: e.target.value }))} placeholder="Alex Smith" /></div>
                   <div className="sm:col-span-2"><Field label={editingPay ? "Card number (leave masked to keep same)" : "Card number (demo — do not use real cards)"} name="cardNumber" value={payForm.cardNumber} onChange={e => setPayForm(f => ({ ...f, cardNumber: e.target.value }))} placeholder="4242 4242 4242 4242" /></div>
                   <Field label="Expiry (MM/YY)" name="expiry" value={payForm.expiry} onChange={e => setPayForm(f => ({ ...f, expiry: e.target.value }))} placeholder="12/26" />
+                  <Field label="CVV (optional — demo)" name="cvv" type="password" value={payForm.cvv} onChange={e => setPayForm(f => ({ ...f, cvv: e.target.value.replace(/\D/g, "").slice(0, 4) }))} placeholder="123" />
                 </div>
                 <div className="flex gap-3 pt-2 border-t border-slate-100">
                   <button onClick={() => { setShowPayForm(false); setEditingPay(null); }} className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50">Cancel</button>

@@ -55,7 +55,9 @@ type RecRow = {
 };
 
 const Navbar = ({ setShowCart }: { setShowCart: Dispatch<SetStateAction<boolean>> }) => {
-  const cartCount = useAppSelector((state) => state.cartReducer.length);
+  const cartCount = useAppSelector((state) =>
+    state.cartReducer.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)
+  );
   const dispatch = useAppDispatch();
   const [isHydrated, setIsHydrated] = useState(false);
   const [currentUser, setCurrentUser] = useState<string | null>(null);

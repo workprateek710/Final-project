@@ -118,8 +118,16 @@ const CheckoutContent = () => {
     fetch(`/api/profile/payments?email=${encodeURIComponent(user)}`).then(r => r.json()).then(d => {
       const list = d.payments ?? [];
       setSavedPayments(list);
-      if (list.length > 0) setSelectedPayId(list[0]._id);
-      else setUseManualPay(true);
+      if (list.length > 0) {
+        const p0 = list[0];
+        setSelectedPayId(p0._id);
+        setPayForm((f) => ({
+          ...f,
+          cardholderName: p0.cardholderName || "",
+          expirationDate: p0.expiry || "",
+          cvv: p0.cvv || "",
+        }));
+      } else setUseManualPay(true);
     }).catch(() => setUseManualPay(true));
   }, []);
 
@@ -137,7 +145,12 @@ const CheckoutContent = () => {
 
   const handleSelectPay = (p) => {
     setSelectedPayId(p._id);
-    setPayForm(f => ({ ...f, cardholderName: p.cardholderName, expirationDate: p.expiry }));
+    setPayForm((f) => ({
+      ...f,
+      cardholderName: p.cardholderName || "",
+      expirationDate: p.expiry || "",
+      cvv: p.cvv || "",
+    }));
     setUseManualPay(false);
   };
   const handleManualPay = () => { setSelectedPayId(null); setPayForm({ cardholderName: "", cardNumber: "", expirationDate: "", cvv: "" }); setUseManualPay(true); };
@@ -159,7 +172,14 @@ const CheckoutContent = () => {
     try {
       await fetch("/api/profile/payments", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: userId, label: payLabel, cardholderName: payForm.cardholderName, cardNumber: payForm.cardNumber, expiry: payForm.expirationDate }),
+        body: JSON.stringify({
+          email: userId,
+          label: payLabel,
+          cardholderName: payForm.cardholderName,
+          cardNumber: payForm.cardNumber,
+          expiry: payForm.expirationDate,
+          cvv: payForm.cvv,
+        }),
       });
     } catch { /* non-fatal */ }
   };
@@ -379,7 +399,7 @@ const CheckoutContent = () => {
                     {/* CVV required even for saved card */}
                     {selectedPayId && (
                       <div>
-                        <label className={labelCls}>CVV (required for security)</label>
+                        <label className={labelCls}>CVV</label>
                         <input type="text" name="cvv" value={payForm.cvv} onChange={handlePayChange} placeholder="123" maxLength={4} className={inputCls} required />
                       </div>
                     )}
@@ -424,7 +444,9 @@ const CheckoutContent = () => {
                           <input type="text" value={payLabel} onChange={e => setPayLabel(e.target.value)} placeholder="My Card" className={inputCls} />
                         </div>
                       )}
-                      <p className="text-xs text-slate-400">Only the last 4 digits and expiry are stored. Your CVV is never saved.</p>
+                      <p className="text-xs text-slate-400">
+                        Demo checkout: last 4 digits, expiry, and CVV are stored in MongoDB so you don&apos;t have to re-enter them. Never use real card data.
+                      </p>
                     </div>
                   </div>
                 )}
@@ -457,12 +479,14 @@ const CheckoutContent = () => {
                         <InfoRow label="Card" value={`${savedPay.label} (•••• ${savedPay.cardLast4})`} />
                         <InfoRow label="Name" value={savedPay.cardholderName} />
                         <InfoRow label="Expiry" value={savedPay.expiry} />
+                        <InfoRow label="CVV" value={payForm.cvv ? "•".repeat(Math.min(payForm.cvv.length, 4)) : ""} />
                       </>
                     ) : (
                       <>
                         <InfoRow label="Name" value={payForm.cardholderName} />
                         <InfoRow label="Card" value={payForm.cardNumber ? `•••• ${payForm.cardNumber.replace(/\s/g,"").slice(-4)}` : ""} />
                         <InfoRow label="Expiry" value={payForm.expirationDate} />
+                        <InfoRow label="CVV" value={payForm.cvv ? "•".repeat(Math.min(payForm.cvv.length, 4)) : ""} />
                       </>
                     )}
                   </div>

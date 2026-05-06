@@ -27,7 +27,11 @@ export async function GET(req: NextRequest) {
   }
 }
 
-/** POST /api/profile/payments — add payment (stores only last 4 + expiry, never CVV) */
+function normalizeCvv(value: unknown): string {
+  return String(value ?? "").replace(/\D/g, "").slice(0, 4);
+}
+
+/** POST /api/profile/payments — add payment (demo: may store CVV — do not use real cards) */
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -35,11 +39,13 @@ export async function POST(req: NextRequest) {
     if (!email) return NextResponse.json({ message: "email required" }, { status: 400 });
     const rawCard = String(body.cardNumber ?? "").replace(/\s/g, "");
     const cardLast4 = rawCard.slice(-4);
+    const cvv = normalizeCvv(body.cvv);
     const entry = {
       label:          String(body.label          ?? "My Card"),
       cardholderName: String(body.cardholderName ?? ""),
       cardLast4,
       expiry:         String(body.expiry         ?? ""),
+      cvv,
       cardType:       inferCardType(rawCard),
     };
     await connectMongoDB();

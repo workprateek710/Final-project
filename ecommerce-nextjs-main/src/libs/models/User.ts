@@ -14,6 +14,8 @@ const paymentSchema = new Schema({
   cardholderName: { type: String, default: "" },
   cardLast4:      { type: String, default: "" },
   expiry:         { type: String, default: "" },
+  /** Demo-only: real apps must not persist CVV (PCI-DSS). */
+  cvv:            { type: String, default: "" },
   cardType:       { type: String, default: "card" }, // visa | mastercard | amex | card
 });
 

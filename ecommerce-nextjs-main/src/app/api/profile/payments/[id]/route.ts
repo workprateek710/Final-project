@@ -5,6 +5,10 @@ import { Types } from "mongoose";
 
 interface WithPayments { savedPayments: unknown[] }
 
+function normalizeCvv(value: unknown): string {
+  return String(value ?? "").replace(/\D/g, "").slice(0, 4);
+}
+
 function inferCardType(num: string): string {
   const n = num.replace(/\s/g, "");
   if (n.startsWith("4")) return "visa";
@@ -14,7 +18,7 @@ function inferCardType(num: string): string {
   return "card";
 }
 
-/** PUT /api/profile/payments/[id] — edit label, cardholderName, expiry (no card number stored) */
+/** PUT /api/profile/payments/[id] — edit label, cardholderName, expiry, optional CVV (demo only) */
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
@@ -30,6 +34,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     if (rawCard.length >= 4) {
       fields["savedPayments.$.cardLast4"] = rawCard.slice(-4);
       fields["savedPayments.$.cardType"] = inferCardType(rawCard);
+    }
+    if (body.cvv !== undefined) {
+      fields["savedPayments.$.cvv"] = normalizeCvv(body.cvv);
     }
     await connectMongoDB();
     const user = await User.findOneAndUpdate(
