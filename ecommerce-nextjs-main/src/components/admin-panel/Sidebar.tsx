@@ -12,7 +12,7 @@ import Image from "next/image";
 
 const menus = [
   { title: "Dashboard", icon: <MdDashboard />, href: "/admin/dashboard" },
-  { title: "Products", icon: <RiShoppingCartLine />, href: "/admin/products" },
+  { title: "Add products", icon: <RiShoppingCartLine />, href: "/admin/products" },
   { title: "Accounts", icon: <MdManageAccounts />, href: "/admin/accounts" },
   { title: "Transactions", icon: <GrTransaction />, href: "/admin/transactions" },
   { title: "Analytics", icon: <IoAnalytics />, href: "/admin/analytics" },
