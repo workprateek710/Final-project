@@ -68,6 +68,8 @@ export default function ProfilePage() {
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [pwForm, setPwForm] = useState({ current: "", next: "", confirm: "" });
+  const [pwSaving, setPwSaving] = useState(false);
   // showCart state kept for Navbar prop contract
   const [, setShowCart] = useState(false);
 
@@ -187,6 +189,34 @@ export default function ProfilePage() {
     }
     setPayForm({ label: p.label, cardholderName: p.cardholderName, cardNumber: `•••• •••• •••• ${p.cardLast4}`, expiry: p.expiry });
     setEditingPay(p._id); setShowPayForm(true);
+  };
+
+  const changePassword = async () => {
+    if (!userId) return;
+    if (pwForm.next !== pwForm.confirm) {
+      toast.error("New passwords do not match.");
+      return;
+    }
+    setPwSaving(true);
+    try {
+      const res = await fetch("/api/profile/password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: userId,
+          currentPassword: pwForm.current,
+          newPassword: pwForm.next,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(typeof data.message === "string" ? data.message : "Update failed");
+      toast.success("Password updated.");
+      setPwForm({ current: "", next: "", confirm: "" });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not update password.");
+    } finally {
+      setPwSaving(false);
+    }
   };
 
   const deleteAccount = async () => {
@@ -455,6 +485,48 @@ export default function ProfilePage() {
               </div>
               <div className="pt-2 border-t border-slate-100">
                 <button onClick={() => { localStorage.removeItem("user"); router.push("/"); }} className="text-sm text-slate-500 hover:text-slate-800 font-medium transition">Sign out →</button>
+              </div>
+            </div>
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
+              <div>
+                <h2 className="font-semibold text-slate-900 text-lg">Change password</h2>
+                <p className="text-slate-500 text-sm mt-0.5">Use your current password, then choose a new one (at least 8 characters).</p>
+              </div>
+              <div className="grid gap-4">
+                <Field
+                  label="Current password"
+                  name="pw-current"
+                  type="password"
+                  value={pwForm.current}
+                  onChange={(e) => setPwForm((f) => ({ ...f, current: e.target.value }))}
+                  placeholder="••••••••"
+                />
+                <Field
+                  label="New password"
+                  name="pw-next"
+                  type="password"
+                  value={pwForm.next}
+                  onChange={(e) => setPwForm((f) => ({ ...f, next: e.target.value }))}
+                  placeholder="At least 8 characters"
+                />
+                <Field
+                  label="Confirm new password"
+                  name="pw-confirm"
+                  type="password"
+                  value={pwForm.confirm}
+                  onChange={(e) => setPwForm((f) => ({ ...f, confirm: e.target.value }))}
+                  placeholder="Repeat new password"
+                />
+              </div>
+              <div className="flex justify-end pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={changePassword}
+                  disabled={pwSaving || !pwForm.current || !pwForm.next || !pwForm.confirm}
+                  className="rounded-xl bg-accent text-white px-6 py-2.5 text-sm font-semibold hover:bg-blue-600 disabled:opacity-60 transition shadow-lg shadow-accent/20"
+                >
+                  {pwSaving ? "Updating…" : "Update password"}
+                </button>
               </div>
             </div>
             <div className="bg-white rounded-2xl border border-red-100 shadow-sm p-6 space-y-4">
