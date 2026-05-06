@@ -7,6 +7,7 @@ type SubcategoryRow = { _id: string; count: number };
 type UserTxRow = { _id: string; count: number };
 type ProductPurchaseRow = { _id: string; count: number; name?: string; category?: string };
 type PurchaseSubcategoryRow = { _id: string; count: number };
+type DeletedProductPurchaseRow = { _id: string; purchaseCount: number };
 
 export const dynamic = "force-dynamic";
 
@@ -89,6 +90,20 @@ export default async function AnalyticsPage() {
     { $sort: { count: -1 } },
   ])) as PurchaseSubcategoryRow[];
 
+  const deletedProductPurchases = (await Purchase.aggregate([
+    { $group: { _id: "$prodId", purchaseCount: { $sum: 1 } } },
+    {
+      $lookup: {
+        from: "products",
+        localField: "_id",
+        foreignField: "prodId",
+        as: "product",
+      },
+    },
+    { $match: { product: { $eq: [] } } },
+    { $sort: { purchaseCount: -1 } },
+  ])) as DeletedProductPurchaseRow[];
+
   return (
     <div className="bg-white h-[calc(100vh-96px)] rounded-lg p-4 overflow-auto">
       <h2 className="text-3xl">Analytics</h2>
@@ -162,6 +177,26 @@ export default async function AnalyticsPage() {
               </li>
             ))}
             {purchaseSubcategories.length === 0 && <li className="text-slate-500">No subcategory purchase data.</li>}
+          </ul>
+        </div>
+        <div className="rounded-lg border border-slate-200 p-4 lg:col-span-2">
+          <h3 className="font-semibold">Removed products (purchase counts)</h3>
+          <p className="text-xs text-slate-500 mt-1 mb-3">
+            Purchases tied to product IDs that no longer exist in the catalog (e.g. after admin delete).
+          </p>
+          <ul className="mt-3 space-y-2 text-sm">
+            {deletedProductPurchases.map((row) => (
+              <li key={row._id} className="flex items-center justify-between gap-4 border-b border-slate-100 pb-2">
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-slate-800">Deleted product</p>
+                  <p className="text-xs text-slate-500 font-mono truncate">{row._id}</p>
+                </div>
+                <span className="font-semibold shrink-0">{row.purchaseCount}</span>
+              </li>
+            ))}
+            {deletedProductPurchases.length === 0 && (
+              <li className="text-slate-500">No purchases for removed products.</li>
+            )}
           </ul>
         </div>
       </div>

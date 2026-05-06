@@ -2,6 +2,7 @@ import { connectMongoDB } from "@/libs/MongoConnect";
 import Product from "@/libs/models/Product";
 import ProductRating from "@/libs/models/ProductRating";
 import Purchase from "@/libs/models/Purchase";
+import User from "@/libs/models/User";
 
 type TxRow = {
   _id: string;
@@ -43,19 +44,32 @@ export default async function TransactionsPage() {
     .lean()) as unknown as TxRow[];
 
   const prodIds = [...new Set(purchases.map((p) => p.prodId).filter(Boolean))];
-  const products = (await Product.find(
-    { prodId: { $in: prodIds } },
-    { prodId: 1, name: 1, price: 1, subcategory: 1 }
-  ).lean()) as unknown as ProductRef[];
-  const ratings = (await ProductRating.find(
-    {
-      prodId: { $in: prodIds },
-      userId: { $in: [...new Set(purchases.map((p) => p.userId).filter(Boolean))] },
-    },
-    { prodId: 1, userId: 1, rating: 1 }
-  ).lean()) as unknown as RatingRef[];
-  const prodMap = new Map(products.map((p) => [p.prodId, p]));
-  const ratingMap = new Map(ratings.map((r) => [`${r.userId}:${r.prodId}`, r.rating]));
+  const purchaseUserIds = [...new Set(purchases.map((p) => p.userId).filter(Boolean))];
+  const normalizedEmails = purchaseUserIds.map((id) => id.trim().toLowerCase());
+
+  const [products, ratings, existingUsers] = await Promise.all([
+    Product.find({ prodId: { $in: prodIds } }, { prodId: 1, name: 1, price: 1, subcategory: 1 }).lean(),
+    ProductRating.find(
+      { prodId: { $in: prodIds }, userId: { $in: purchaseUserIds } },
+      { prodId: 1, userId: 1, rating: 1 }
+    ).lean(),
+    User.find({ email: { $in: normalizedEmails } }, { email: 1 }).lean(),
+  ]);
+
+  const prodMap = new Map((products as unknown as ProductRef[]).map((p) => [p.prodId, p]));
+  const ratingMap = new Map(
+    (ratings as unknown as RatingRef[]).map((r) => [`${r.userId}:${r.prodId}`, r.rating])
+  );
+  const registeredEmails = new Set(
+    (existingUsers as { email: string }[]).map((u) => u.email.trim().toLowerCase())
+  );
+
+  function displayUser(userId: string) {
+    const raw = userId.trim();
+    const lower = raw.toLowerCase();
+    if (!lower || lower === "anonymous") return raw || "—";
+    return registeredEmails.has(lower) ? raw : "deleted user";
+  }
 
   return (
     <div className="bg-white h-[calc(100vh-96px)] rounded-lg p-4 overflow-auto">
@@ -76,15 +90,16 @@ export default async function TransactionsPage() {
           <tbody>
             {purchases.map((tx) => {
               const p = prodMap.get(tx.prodId);
+              const productRemoved = !p;
               const rating = ratingMap.get(`${tx.userId}:${tx.prodId}`);
               return (
                 <tr key={tx._id} className="border-t border-[#f1f1f1]">
                   <td className="py-2">{formatAdminDate(tx.createdAt)}</td>
-                  <td className="py-2">{tx.userId}</td>
-                  <td className="py-2">{p?.name || tx.prodId}</td>
-                  <td className="py-2">{p?.subcategory || "General"}</td>
-                  <td className="py-2">{p?.price ? `$${p.price}` : "—"}</td>
-                  <td className="py-2">{rating ?? "Not rated"}</td>
+                  <td className="py-2">{displayUser(tx.userId)}</td>
+                  <td className="py-2">{productRemoved ? "Deleted product" : p!.name || tx.prodId}</td>
+                  <td className="py-2">{productRemoved ? null : p!.subcategory || "General"}</td>
+                  <td className="py-2">{productRemoved ? null : p!.price ? `$${p!.price}` : "—"}</td>
+                  <td className="py-2">{productRemoved ? null : rating !== undefined ? rating : "Not rated"}</td>
                 </tr>
               );
             })}
