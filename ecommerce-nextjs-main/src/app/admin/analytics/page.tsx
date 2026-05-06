@@ -10,8 +10,22 @@ type PurchaseSubcategoryRow = { _id: string; count: number };
 
 export const dynamic = "force-dynamic";
 
+function labelTopPurchaser(userId: string, registeredEmails: Set<string>) {
+  const raw = String(userId ?? "").trim();
+  const lower = raw.toLowerCase();
+  if (!lower) return "—";
+  if (lower === "anonymous") return raw;
+  return registeredEmails.has(lower) ? raw : "Deleted user";
+}
+
 export default async function AnalyticsPage() {
   await connectMongoDB();
+
+  const registeredUserEmails = new Set(
+    ((await User.find({}, { email: 1 }).lean()) as { email: string }[]).map((u) =>
+      u.email.trim().toLowerCase()
+    )
+  );
 
   const [usersCount, productsCount, purchasesCount] = await Promise.all([
     User.countDocuments({}),
@@ -128,7 +142,7 @@ export default async function AnalyticsPage() {
           <ul className="mt-3 space-y-2 text-sm">
             {topUsers.map((row) => (
               <li key={row._id} className="flex items-center justify-between border-b border-slate-100 pb-2">
-                <span className="truncate pr-4">{row._id}</span>
+                <span className="truncate pr-4">{labelTopPurchaser(row._id, registeredUserEmails)}</span>
                 <span className="font-semibold">{row.count}</span>
               </li>
             ))}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import toast from "react-hot-toast";
 
 export type AccountRowClient = {
@@ -25,9 +25,23 @@ type Props = {
   deletedSummary: DeletedSummary | null;
 };
 
+function rowMatchesAccountSearch(user: AccountRowClient, q: string) {
+  if (!q.trim()) return true;
+  const needle = q.trim().toLowerCase();
+  const email = user.email.toLowerCase();
+  const name = (user.name ?? "").toLowerCase();
+  return email.includes(needle) || name.includes(needle);
+}
+
 export default function AdminAccountsTable({ users, adminEmail, deletedSummary }: Props) {
   const router = useRouter();
   const [busyEmail, setBusyEmail] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+
+  const filteredUsers = useMemo(
+    () => users.filter((u) => rowMatchesAccountSearch(u, search)),
+    [users, search]
+  );
 
   const deleteUser = async (email: string, label: string) => {
     const ok = window.confirm(
@@ -55,8 +69,28 @@ export default function AdminAccountsTable({ users, adminEmail, deletedSummary }
 
   return (
     <>
-      <h2 className="text-3xl">Accounts</h2>
-      <p className="text-sm text-slate-500 mt-1">Registered storefront users.</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-3xl">Accounts</h2>
+          <p className="text-sm text-slate-500 mt-1">Registered storefront users.</p>
+        </div>
+        <label className="block w-full sm:max-w-md shrink-0">
+          <span className="sr-only">Search accounts</span>
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by email or name…"
+            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition"
+            autoComplete="off"
+          />
+        </label>
+      </div>
+      {search.trim() && (
+        <p className="mt-2 text-sm text-slate-500">
+          Showing {filteredUsers.length} of {users.length} accounts
+        </p>
+      )}
       <div className="mt-4 overflow-auto">
         <table className="w-full text-sm">
           <thead>
@@ -70,7 +104,7 @@ export default function AdminAccountsTable({ users, adminEmail, deletedSummary }
             </tr>
           </thead>
           <tbody>
-            {users.map((user) => {
+            {filteredUsers.map((user) => {
               const isSelf = user.email.trim().toLowerCase() === adminEmail;
               return (
                 <tr key={user._id} className="border-t border-[#f1f1f1]">
@@ -96,7 +130,7 @@ export default function AdminAccountsTable({ users, adminEmail, deletedSummary }
                 </tr>
               );
             })}
-            {deletedSummary && deletedSummary.count > 0 && (
+            {deletedSummary && deletedSummary.count > 0 && !search.trim() && (
               <tr className="border-t border-[#f1f1f1] bg-slate-50/80">
                 <td className="py-2 font-medium text-slate-800">
                   Deleted users ({deletedSummary.count})
@@ -115,9 +149,16 @@ export default function AdminAccountsTable({ users, adminEmail, deletedSummary }
                 </td>
               </tr>
             )}
+            {users.length > 0 && filteredUsers.length === 0 && search.trim() ? (
+              <tr>
+                <td className="py-4 text-slate-500" colSpan={6}>
+                  No accounts match your search.
+                </td>
+              </tr>
+            ) : null}
           </tbody>
         </table>
-        {deletedSummary && deletedSummary.count > 0 && (
+        {deletedSummary && deletedSummary.count > 0 && !search.trim() && (
           <p className="mt-2 text-xs text-slate-500 leading-relaxed max-w-xl">
             The row above sums purchases and reviews for storefront accounts that were deleted (history is kept under their former email id). Guest checkout under “anonymous” is excluded.
           </p>

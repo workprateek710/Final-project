@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "db:seed": "python scripts/seed_database.py",
-    "db:reset": "python scripts/reset_data.py"
+    "db:reset": "python scripts/reset_data.py",
+    "db:add-random-purchases": "node scripts/add_random_purchases.cjs"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.11.2",

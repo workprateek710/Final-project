@@ -12,20 +12,7 @@ export type { IProduct };
 function productMatchesQuery(product: IProduct, q: string) {
   if (!q.trim()) return true;
   const needle = q.trim().toLowerCase();
-  const hay = [
-    product.name,
-    product.prodId,
-    product.slug,
-    product.category,
-    product.subcategory,
-    product.brand,
-    product.description,
-    product.price,
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
-  return hay.includes(needle);
+  return (product.name ?? "").toLowerCase().includes(needle);
 }
 
 const Dashboard = () => {
@@ -77,7 +64,7 @@ const Dashboard = () => {
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name, product ID, slug, brand, category…"
+              placeholder="Search by product name…"
               className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition"
               autoComplete="off"
             />
