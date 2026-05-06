@@ -76,6 +76,8 @@ const Cart = ({ setShowCart }: PropsType) => {
                   title={item.title}
                   price={item.price}
                   quantity={item.quantity}
+                  slug={item.slug}
+                  onNavigate={() => setShowCart(false)}
                 />
               ))}
             </div>

@@ -141,6 +141,7 @@ const Navbar = ({ setShowCart }: { setShowCart: Dispatch<SetStateAction<boolean>
         img: product.imageUrl,
         price: product.price,
         quantity: 1,
+        slug: product.slug,
       })
     );
     setShowCart(true);

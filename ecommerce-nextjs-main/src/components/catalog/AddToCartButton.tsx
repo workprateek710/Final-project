@@ -7,6 +7,7 @@ import { AiOutlineShoppingCart } from "react-icons/ai";
 
 type Props = {
   prodId: string;
+  slug: string;
   name: string;
   imgSrc: string;
   price: number;
@@ -15,6 +16,7 @@ type Props = {
 
 export default function AddToCartButton({
   prodId,
+  slug,
   name,
   imgSrc,
   price,
@@ -33,6 +35,7 @@ export default function AddToCartButton({
             img: imgSrc,
             price,
             quantity: 1,
+            slug,
           })
         );
         makeToast("Added to cart");

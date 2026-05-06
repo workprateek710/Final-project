@@ -117,6 +117,7 @@ export default async function ProductDetailPage({ params }: Props) {
             <div className="mt-8 flex flex-wrap gap-3 items-center">
               <AddToCartButton
                 prodId={doc.prodId}
+                slug={doc.slug}
                 name={doc.name}
                 imgSrc={doc.imgSrc}
                 price={priceNum}

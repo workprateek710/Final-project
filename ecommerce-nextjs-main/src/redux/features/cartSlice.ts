@@ -6,6 +6,7 @@ interface IProduct {
   img: string;
   price: number;
   quantity: number;
+  slug?: string;
 }
 
 const initialState: Array<IProduct> = [];

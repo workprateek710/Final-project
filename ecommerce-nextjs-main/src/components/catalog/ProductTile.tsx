@@ -60,6 +60,7 @@ export default function ProductTile({ p }: { p: TileProduct }) {
           <span className="text-xl font-bold text-slate-900">${p.price}</span>
           <AddToCartButton
             prodId={p.prodId}
+            slug={p.slug}
             name={p.name}
             imgSrc={p.imgSrc}
             price={priceNum}
