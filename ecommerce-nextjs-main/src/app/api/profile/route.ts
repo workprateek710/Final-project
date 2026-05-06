@@ -1,5 +1,4 @@
 import User from "@/libs/models/User";
-import Purchase from "@/libs/models/Purchase";
 import { connectMongoDB } from "@/libs/MongoConnect";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -46,7 +45,7 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-/** DELETE /api/profile  — delete account + purchase history */
+/** DELETE /api/profile  — delete account; purchases and reviews stay keyed by userId for admin analytics */
 export async function DELETE(request: NextRequest) {
   try {
     const body = await request.json();
@@ -60,8 +59,7 @@ export async function DELETE(request: NextRequest) {
     const user = await User.findOneAndDelete({ email });
     if (!user) return NextResponse.json({ message: "User not found" }, { status: 404 });
 
-    await Purchase.deleteMany({ userId: email });
-    return NextResponse.json({ message: "Account and purchase history deleted." });
+    return NextResponse.json({ message: "Account deleted." });
   } catch (e) {
     return NextResponse.json({ message: String(e) }, { status: 500 });
   }

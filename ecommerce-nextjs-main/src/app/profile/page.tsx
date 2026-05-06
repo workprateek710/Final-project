@@ -459,7 +459,9 @@ export default function ProfilePage() {
             </div>
             <div className="bg-white rounded-2xl border border-red-100 shadow-sm p-6 space-y-4">
               <h2 className="font-semibold text-red-600 text-lg flex items-center gap-2">⚠️ Danger zone</h2>
-              <p className="text-slate-500 text-sm">Permanently delete your account, all saved addresses, cards, and purchase history. This cannot be undone.</p>
+              <p className="text-slate-500 text-sm">
+                Permanently delete your account, saved addresses, and saved cards. Past orders and reviews remain stored without your profile. This cannot be undone.
+              </p>
               <div className="space-y-3">
                 <div>
                   <label className="block text-xs font-medium text-slate-600 mb-1.5">Type <code className="bg-slate-100 px-1.5 py-0.5 rounded text-red-600 font-bold">DELETE</code> to confirm</label>

@@ -52,6 +52,27 @@ export default async function AccountsPage() {
     reviewsCount: reviewsByUser.get(user.email) ?? 0,
   })) as AccountRow[];
 
+  const registeredEmails = new Set(
+    (usersRaw as unknown as RawUserRow[]).map((u) => u.email.trim().toLowerCase())
+  );
+
+  const isOrphanActivityUserId = (userId: string) => {
+    const key = String(userId ?? "").trim().toLowerCase();
+    if (!key || key === "anonymous") return false;
+    return !registeredEmails.has(key);
+  };
+
+  const orphanPurchaseRows = purchaseCounts.filter((row) => isOrphanActivityUserId(String(row._id)));
+  const orphanReviewRows = reviewCounts.filter((row) => isOrphanActivityUserId(String(row._id)));
+
+  const orphanUserIds = new Set<string>();
+  for (const row of orphanPurchaseRows) orphanUserIds.add(String(row._id).trim().toLowerCase());
+  for (const row of orphanReviewRows) orphanUserIds.add(String(row._id).trim().toLowerCase());
+
+  const deletedAccountsCount = orphanUserIds.size;
+  const orphanPurchasesTotal = orphanPurchaseRows.reduce((sum, row) => sum + row.count, 0);
+  const orphanReviewsTotal = orphanReviewRows.reduce((sum, row) => sum + row.count, 0);
+
   return (
     <div className="bg-white h-[calc(100vh-96px)] rounded-lg p-4 overflow-auto">
       <h2 className="text-3xl">Accounts</h2>
@@ -77,6 +98,17 @@ export default async function AccountsPage() {
                 <td className="py-2">{formatAdminDate(user.createdAt)}</td>
               </tr>
             ))}
+            {deletedAccountsCount > 0 && (
+              <tr className="border-t border-[#f1f1f1] bg-slate-50/80">
+                <td className="py-2 font-medium text-slate-800">
+                  Deleted users ({deletedAccountsCount})
+                </td>
+                <td className="py-2 text-slate-400">—</td>
+                <td className="py-2 font-medium">{orphanPurchasesTotal}</td>
+                <td className="py-2 font-medium">{orphanReviewsTotal}</td>
+                <td className="py-2 text-slate-400">—</td>
+              </tr>
+            )}
             {users.length === 0 && (
               <tr>
                 <td className="py-4 text-slate-500" colSpan={5}>
@@ -86,6 +118,11 @@ export default async function AccountsPage() {
             )}
           </tbody>
         </table>
+        {deletedAccountsCount > 0 && (
+          <p className="mt-2 text-xs text-slate-500 leading-relaxed max-w-xl">
+            The row above sums purchases and reviews for storefront accounts that were deleted (history is kept under their former email id). Guest checkout under “anonymous” is excluded.
+          </p>
+        )}
       </div>
     </div>
   );
