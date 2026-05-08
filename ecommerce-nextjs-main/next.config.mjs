@@ -16,6 +16,8 @@ const nextConfig = {
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "utfs.io" },
+      /** UploadThing file CDN (subdomains vary by deployment) */
+      { protocol: "https", hostname: "*.ufs.sh" },
       { protocol: "https", hostname: "upload.wikimedia.org" },
       { protocol: "https", hostname: "picsum.photos" },
     ],

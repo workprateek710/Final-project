@@ -26,10 +26,11 @@ export default function ProductRatingPanel({
       typeof window !== "undefined" ? localStorage.getItem("user") : null;
     setUserId(localUser);
 
-    if (!localUser) return;
+    const params: Record<string, string> = { prodId };
+    if (localUser) params.userId = localUser;
 
     axios
-      .get("/api/ratings", { params: { prodId, userId: localUser } })
+      .get("/api/ratings", { params })
       .then((res) => {
         const data = res.data ?? {};
         if (typeof data.userRating === "number") {

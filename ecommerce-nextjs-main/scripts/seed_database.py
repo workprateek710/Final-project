@@ -1,10 +1,21 @@
 """
 MongoDB catalog seed for Volta Electronics (real-style product photos).
 
-  python scripts/seed_database.py              # refresh products only (purchases/users untouched)
-  python scripts/seed_database.py --demo-purchases   # also insert synthetic purchase history
+  python scripts/seed_database.py
+      Refresh products from CATALOG (+101 expansion SKUs). Purchases/ratings unchanged unless flags below.
 
-Requires MONGO_URI in .env.local. Images saved under public/catalog/.
+  python scripts/seed_database.py --demo-purchases
+      Also replace purchases with the older short synthetic demo.
+
+  python scripts/seed_database.py --rich-demo
+      Replace purchases + productratings with dense demo: ~280 synthetic users averaging ~17 purchases each,
+      sparse ratings (about 28% of purchased pairs), then sync products.ratingAvg/reviews.
+
+  python scripts/seed_database.py --skip-image-download
+      Skip downloading files into public/catalog (Mongo imgSrc uses Wikimedia HTTPS URLs — best for Vercel).
+
+Requires MONGO_URI in .env.local.
+Warning: Re-seeding calls products.delete_many({}) — take an Atlas backup first if needed.
 """
 from __future__ import annotations
 
@@ -24,6 +35,11 @@ except ImportError:
     sys.exit(1)
 
 ROOT = Path(__file__).resolve().parents[1]
+_SCRIPTS_DIR = Path(__file__).resolve().parent
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
+
+from seed_expansion_101 import expansion_hundred_one  # noqa: E402
 
 
 def _load_env_file(path: Path) -> None:
@@ -652,7 +668,7 @@ FINAL_CATALOG = [
 CATALOG.extend(EXTRA_CATALOG)
 CATALOG.extend(MORE_CATALOG)
 CATALOG.extend(FINAL_CATALOG)
-
+CATALOG.extend(expansion_hundred_one())
 
 def download_images() -> None:
     dest = ROOT / "public" / "catalog"
@@ -661,17 +677,13 @@ def download_images() -> None:
         target = dest / item["file"]
         if target.exists() and target.stat().st_size > 2000:
             continue
-        fallback = f"https://picsum.photos/seed/{item['prodId']}/800/800"
-        for label, url in (("catalog", item["url"]), ("fallback", fallback)):
-            try:
-                print("Downloading", item["file"], f"({label})...")
-                download_file(url, target)
-                if target.stat().st_size > 2000:
-                    break
-            except Exception as e:
-                print("  WARN:", item["file"], label, e)
-        else:
-            print("  ERROR: could not download", item["file"])
+        try:
+            print("Downloading", item["file"], "...")
+            download_file(item["url"], target)
+            if target.stat().st_size <= 2000:
+                print("  WARN: tiny file", item["file"])
+        except Exception as e:
+            print("  WARN:", item["file"], e)
 
 
 def build_purchases() -> list[dict]:
@@ -713,28 +725,139 @@ def build_purchases() -> list[dict]:
     return rows
 
 
+def purchase_weight(prod_id: str) -> float:
+    pid = prod_id.lower()
+    if any(k in pid for k in ("iphone", "galaxy-s24", "macbook", "ps5", "steam-deck", "pixel-8")):
+        return 18.0
+    if any(k in pid for k in ("ipad", "airpods", "switch", "xbox", "galaxy-z")):
+        return 12.0
+    if "elec-exp-" in prod_id:
+        return 7.0
+    return 4.5
+
+
+def build_rich_purchases(
+    prod_ids: list[str],
+    *,
+    num_users: int = 280,
+    target_avg: float = 17.0,
+    rng: random.Random | None = None,
+) -> list[dict]:
+    """Weighted random purchases so bestsellers get more realistic volume."""
+    rng = rng or random.Random(42)
+    weights = [purchase_weight(pid) for pid in prod_ids]
+    rows: list[dict] = []
+    now = datetime.now(timezone.utc)
+    for i in range(1, num_users + 1):
+        uid = f"synthetic_shop_{i:04d}"
+        n = max(4, min(52, int(rng.gauss(target_avg, 4.5))))
+        picks = rng.choices(prod_ids, weights=weights, k=n)
+        for pid in picks:
+            rows.append(
+                {
+                    "userId": uid,
+                    "prodId": pid,
+                    "createdAt": now - timedelta(days=rng.randint(0, 380)),
+                }
+            )
+    return rows
+
+
+def build_sparse_ratings(
+    purchase_rows: list[dict],
+    *,
+    rating_probability: float = 0.28,
+    rng: random.Random | None = None,
+) -> list[dict]:
+    """Not every shopper leaves a rating — sparse realistic coverage."""
+    rng = rng or random.Random(43)
+    seen: set[tuple[str, str]] = set()
+    out: list[dict] = []
+    for row in purchase_rows:
+        if rng.random() > rating_probability:
+            continue
+        uid = row["userId"]
+        pid = row["prodId"]
+        key = (uid, pid)
+        if key in seen:
+            continue
+        seen.add(key)
+        rating = rng.choices([2, 3, 4, 5], weights=[1, 2, 4, 5])[0]
+        out.append({"prodId": pid, "userId": uid, "rating": rating})
+    return out
+
+
+def sync_product_rating_fields(db) -> None:
+    """Denormalize ratingAvg + reviews on products from productratings."""
+    agg_rows = list(
+        db["productratings"].aggregate(
+            [{"$group": {"_id": "$prodId", "reviews": {"$sum": 1}, "ratingAvg": {"$avg": "$rating"}}}]
+        )
+    )
+    by_pid = {str(r["_id"]): r for r in agg_rows}
+    for doc in db["products"].find({}, {"_id": 1, "prodId": 1}):
+        pid = str(doc.get("prodId") or "")
+        st = by_pid.get(pid)
+        db["products"].update_one(
+            {"_id": doc["_id"]},
+            {
+                "$set": {
+                    "reviews": int(st["reviews"]) if st else 0,
+                    "ratingAvg": round(float(st["ratingAvg"]), 2) if st else 0,
+                }
+            },
+        )
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument(
         "--demo-purchases",
         action="store_true",
-        help="Insert synthetic purchase rows (otherwise purchases collection is not modified).",
+        help="Insert legacy synthetic purchase rows (small demo).",
+    )
+    ap.add_argument(
+        "--rich-demo",
+        action="store_true",
+        help="Replace purchases + productratings with ~280 users (~17 purchases avg), sparse ratings, sync product stars.",
+    )
+    ap.add_argument(
+        "--skip-image-download",
+        action="store_true",
+        help="Do not mirror images into public/catalog (recommended when using remote Wikimedia imgSrc).",
+    )
+    ap.add_argument(
+        "--local-img-src",
+        action="store_true",
+        help="Store imgSrc as /catalog/... — requires files under public/catalog.",
     )
     args = ap.parse_args()
 
-    download_images()
+    if args.demo_purchases and args.rich_demo:
+        print("Use only one of --demo-purchases or --rich-demo.")
+        sys.exit(1)
+
+    if not args.skip_image_download:
+        download_images()
     db = get_db()
     db["products"].delete_many({})
 
     products = []
     for item in CATALOG:
         rel = f"/catalog/{item['file']}"
+        if args.local_img_src:
+            img_src = rel
+            file_key = f"local:{rel}"
+        else:
+            img_src = item["url"]
+            file_key = f"wikimedia:{item['slug']}"
+
         products.append(
             {
                 "prodId": item["prodId"],
                 "slug": item["slug"],
-                "imgSrc": rel,
-                "fileKey": f"local:{rel}",
+                "imgSrc": img_src,
+                "fileKey": file_key,
                 "name": item["name"],
                 "brand": item["brand"],
                 "category": item["category"],
@@ -751,12 +874,28 @@ def main() -> None:
     db["products"].insert_many(products)
     msg = f"Inserted {len(products)} products into {db.name!r}."
 
-    if args.demo_purchases:
+    if args.rich_demo:
+        db["purchases"].delete_many({})
+        db["productratings"].delete_many({})
+        all_ids = [p["prodId"] for p in products]
+        rng = random.Random(20260509)
+        purch_rows = build_rich_purchases(all_ids, num_users=280, target_avg=17.0, rng=rng)
+        db["purchases"].insert_many(purch_rows)
+        rating_docs = build_sparse_ratings(purch_rows, rating_probability=0.28, rng=rng)
+        if rating_docs:
+            db["productratings"].insert_many(rating_docs)
+        sync_product_rating_fields(db)
+        avg_u = len(purch_rows) / 280
+        msg += (
+            f" Rich demo: {len(purch_rows)} purchases (~{avg_u:.1f} per user), "
+            f"{len(rating_docs)} sparse ratings in productratings."
+        )
+    elif args.demo_purchases:
         db["purchases"].delete_many({})
         db["purchases"].insert_many(build_purchases())
         msg += f" Demo purchases: {db['purchases'].count_documents({})} rows."
     else:
-        msg += " Purchases left unchanged (use --demo-purchases or scripts/reset_data.py as needed)."
+        msg += " Purchases/ratings unchanged (use --rich-demo or --demo-purchases)."
 
     print(msg)
 

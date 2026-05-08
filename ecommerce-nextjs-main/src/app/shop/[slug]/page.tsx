@@ -1,4 +1,5 @@
 import Product from "@/libs/models/Product";
+import ProductRating from "@/libs/models/ProductRating";
 import { connectMongoDB } from "@/libs/MongoConnect";
 import AddToCartButton from "@/components/catalog/AddToCartButton";
 import ProductRatingPanel from "@/components/catalog/ProductRatingPanel";
@@ -30,9 +31,28 @@ export default async function ProductDetailPage({ params }: Props) {
   const doc = (await Product.findOne({ slug }).lean()) as LeanProduct | null;
   if (!doc) notFound();
 
+  /** Prefer live aggregate from ProductRating so SSR matches DB even when Product counters drift */
+  const ratingAgg = (await ProductRating.aggregate<{ avg: number; count: number }>([
+    { $match: { prodId: doc.prodId } },
+    {
+      $group: {
+        _id: "$prodId",
+        avg: { $avg: "$rating" },
+        count: { $sum: 1 },
+      },
+    },
+  ])) as { avg: number; count: number }[];
+
+  const aggRow = ratingAgg[0];
+  let reviewsCount = doc.reviews ?? 0;
+  let displayedAvg: number | null =
+    reviewsCount > 0 ? Number(doc.ratingAvg ?? 0) : null;
+  if (aggRow && aggRow.count > 0) {
+    reviewsCount = aggRow.count;
+    displayedAvg = Number(aggRow.avg.toFixed(2));
+  }
+
   const priceNum = Number.parseFloat(String(doc.price)) || 0;
-  const reviewsCount = doc.reviews ?? 0;
-  const displayedAvg = reviewsCount > 0 ? Number(doc.ratingAvg ?? 0) : null;
   const stars = displayedAvg !== null ? Math.round(displayedAvg) : 0;
 
   return (

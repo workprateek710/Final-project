@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "db:seed": "python scripts/seed_database.py",
+    "db:seed": "python scripts/seed_database.py --skip-image-download",
+    "db:seed:rich": "python scripts/seed_database.py --skip-image-download --rich-demo",
     "db:reset": "python scripts/reset_data.py",
     "db:add-random-purchases": "node scripts/add_random_purchases.cjs"
   },
