@@ -4,6 +4,7 @@ import Product from "@/libs/models/Product";
 import ProductRating from "@/libs/models/ProductRating";
 import { connectMongoDB } from "@/libs/MongoConnect";
 import { buildTfIdfVectors, cosineSimilarity } from "@/utils/recommendationScoring";
+import { effectiveRatings, ratingRollupMap } from "@/utils/productRatingRollup";
 
 const MIN_PURCHASES_FOR_RECS = Math.max(
   1,
@@ -51,7 +52,7 @@ export async function GET(request: NextRequest) {
   try {
     await connectMongoDB();
 
-    const [userPurchases, products, activityRows] = await Promise.all([
+    const [userPurchases, productsRaw, activityRows] = await Promise.all([
       Purchase.find({ userId }).sort({ createdAt: -1 }).lean<PurchaseDoc[]>(),
       Product.find({ category: "Electronics" })
         .select(
@@ -62,6 +63,12 @@ export async function GET(request: NextRequest) {
         { $group: { _id: "$prodId", purchases: { $sum: 1 } } },
       ]),
     ]);
+
+    const rollup = await ratingRollupMap(productsRaw.map((p) => p.prodId));
+    const products = productsRaw.map((product) => {
+      const { ratingAvg, reviews } = effectiveRatings(product.prodId, product, rollup);
+      return { ...product, ratingAvg, reviews };
+    });
 
     if (userPurchases.length < MIN_PURCHASES_FOR_RECS) {
       return NextResponse.json({

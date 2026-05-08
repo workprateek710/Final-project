@@ -1,6 +1,7 @@
 import Product from "@/libs/models/Product";
 import { connectMongoDB } from "@/libs/MongoConnect";
 import { NextRequest, NextResponse } from "next/server";
+import { effectiveRatings, ratingRollupMap } from "@/utils/productRatingRollup";
 
 /**
  * Catalog listing. Query params:
@@ -22,7 +23,19 @@ export async function GET(request: NextRequest) {
     if (featured === "1") filter.featured = true;
 
     const data = await Product.find(filter).sort({ name: 1 }).lean();
-    const response = NextResponse.json(data);
+    const prodIds = data.map((d) => String((d as { prodId?: string }).prodId ?? ""));
+    const rollup = await ratingRollupMap(prodIds);
+    const merged = data.map((doc) => {
+      const d = doc as {
+        prodId?: string;
+        ratingAvg?: number;
+        reviews?: number;
+      };
+      const prodId = String(d.prodId ?? "");
+      const { ratingAvg, reviews } = effectiveRatings(prodId, d, rollup);
+      return { ...doc, ratingAvg, reviews };
+    });
+    const response = NextResponse.json(merged);
     response.headers.set(
       "Cache-Control",
       "no-store, no-cache, must-revalidate, proxy-revalidate"

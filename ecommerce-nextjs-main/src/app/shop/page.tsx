@@ -2,6 +2,7 @@ import Product from "@/libs/models/Product";
 import Purchase from "@/libs/models/Purchase";
 import { connectMongoDB } from "@/libs/MongoConnect";
 import ProductTile, { type TileProduct } from "@/components/catalog/ProductTile";
+import { effectiveRatings, ratingRollupMap } from "@/utils/productRatingRollup";
 import Link from "next/link";
 import { SORT_OPTIONS, parseSortOption } from "@/constants/catalogFilters";
 
@@ -29,17 +30,23 @@ export default async function ShopPage({ searchParams }: Props) {
     ]),
   ]);
   const purchaseCounts = new Map(purchaseRows.map((row) => [row._id, row.purchases]));
-  const items: TileProduct[] = raw.map((doc) => ({
-    prodId: doc.prodId as string,
-    slug: doc.slug as string,
-    name: doc.name as string,
-    imgSrc: doc.imgSrc as string,
-    category: doc.category as string,
-    subcategory: (doc.subcategory as string) || "General",
-    price: String(doc.price),
-    ratingAvg: doc.ratingAvg as number | undefined,
-    reviews: doc.reviews as number | undefined,
-  }));
+  const prodIds = raw.map((d) => String(d.prodId ?? ""));
+  const rollup = await ratingRollupMap(prodIds);
+  const items: TileProduct[] = raw.map((doc) => {
+    const prodId = String(doc.prodId ?? "");
+    const { ratingAvg, reviews } = effectiveRatings(prodId, doc, rollup);
+    return {
+      prodId,
+      slug: doc.slug as string,
+      name: doc.name as string,
+      imgSrc: doc.imgSrc as string,
+      category: doc.category as string,
+      subcategory: (doc.subcategory as string) || "General",
+      price: String(doc.price),
+      ratingAvg: reviews > 0 ? ratingAvg : undefined,
+      reviews: reviews > 0 ? reviews : undefined,
+    };
+  });
   const sortedItems = [...items].sort((a, b) => {
     if (sort === "popular") {
       return (purchaseCounts.get(b.prodId) ?? 0) - (purchaseCounts.get(a.prodId) ?? 0);
