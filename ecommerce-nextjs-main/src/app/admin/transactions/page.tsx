@@ -68,6 +68,7 @@ export default async function TransactionsPage() {
     const raw = userId.trim();
     const lower = raw.toLowerCase();
     if (!lower || lower === "anonymous") return raw || "—";
+    if (lower.startsWith("synthetic_shop_")) return raw;
     return registeredEmails.has(lower) ? raw : "deleted user";
   }
 

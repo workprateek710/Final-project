@@ -5,6 +5,7 @@ import Footer from "@/components/front-end/Footer";
 import Navbar from "@/components/front-end/Navbar";
 import Image from "next/image";
 import Link from "next/link";
+import { shouldUseUnoptimizedImage } from "@/utils/imageOptimization";
 import { useEffect, useState } from "react";
 
 type RecommendedProduct = {
@@ -123,6 +124,7 @@ export default function RecommendationsPage() {
                     src={product.imgSrc || "/placeholder.jpg"}
                     alt={product.name}
                     fill
+                    unoptimized={shouldUseUnoptimizedImage(product.imgSrc)}
                     className="object-contain p-4 transition group-hover:scale-105"
                     sizes="(max-width:768px) 50vw, 25vw"
                   />

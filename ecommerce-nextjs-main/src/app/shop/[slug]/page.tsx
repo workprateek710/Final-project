@@ -6,6 +6,7 @@ import ProductRatingPanel from "@/components/catalog/ProductRatingPanel";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { shouldUseUnoptimizedImage } from "@/utils/imageOptimization";
 
 export const dynamic = "force-dynamic";
 
@@ -84,6 +85,7 @@ export default async function ProductDetailPage({ params }: Props) {
               src={doc.imgSrc}
               alt={doc.name}
               fill
+              unoptimized={shouldUseUnoptimizedImage(doc.imgSrc)}
               className="object-contain p-8"
               priority
               sizes="(max-width:1024px) 100vw, 50vw"

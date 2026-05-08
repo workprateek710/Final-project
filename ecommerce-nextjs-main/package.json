@@ -9,6 +9,8 @@
     "lint": "next lint",
     "db:seed": "python scripts/seed_database.py --skip-image-download",
     "db:seed:rich": "python scripts/seed_database.py --skip-image-download --rich-demo",
+    "db:sync:images": "python scripts/seed_database.py --sync-img-src-only --skip-image-download",
+    "db:sync:stars": "python scripts/seed_database.py --resync-stars-only",
     "db:reset": "python scripts/reset_data.py",
     "db:add-random-purchases": "node scripts/add_random_purchases.cjs"
   },

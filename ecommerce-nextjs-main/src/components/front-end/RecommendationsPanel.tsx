@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { shouldUseUnoptimizedImage } from "@/utils/imageOptimization";
 import { useEffect, useState } from "react";
 
 type RecRow = {
@@ -112,6 +113,7 @@ export default function RecommendationsPanel({ userId }: { userId: string }) {
                 src={product.imgSrc || "/placeholder.jpg"}
                 alt={product.name || product.prod_id}
                 fill
+                unoptimized={shouldUseUnoptimizedImage(product.imgSrc)}
                 className="object-contain p-2 group-hover:scale-105 transition-transform duration-300"
                 sizes="200px"
               />

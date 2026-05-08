@@ -1,4 +1,10 @@
 /* eslint-disable no-console */
+/**
+ * ⚠️ PRODUCTION WARNING
+ * This script overwrites EVERY product's imgSrc with random picsum.photos placeholders.
+ * Run ONLY on disposable databases. For Volta storefront photos use scripts/seed_database.py
+ * or npm run db:sync:images to restore Wikimedia URLs.
+ */
 const fs = require("fs");
 const path = require("path");
 const mongoose = require("mongoose");

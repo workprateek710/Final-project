@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { shouldUseUnoptimizedImage } from "@/utils/imageOptimization";
 import { useEffect, useState } from "react";
 
 type TrendRow = {
@@ -67,7 +68,14 @@ export default function TrendingStrip() {
             className="border border-slate-200 rounded-xl p-3 bg-white hover:shadow-lg hover:border-accent/30 transition group"
           >
             <div className="relative h-28 w-full bg-slate-50 rounded-lg overflow-hidden">
-              <Image src={t.imgSrc} alt={t.name} fill className="object-contain p-1" sizes="200px" />
+              <Image
+                src={t.imgSrc}
+                alt={t.name}
+                fill
+                unoptimized={shouldUseUnoptimizedImage(t.imgSrc)}
+                className="object-contain p-1"
+                sizes="200px"
+              />
             </div>
             <p className="font-semibold text-sm mt-2 line-clamp-2 text-slate-900 group-hover:text-accent transition">
               {t.name}

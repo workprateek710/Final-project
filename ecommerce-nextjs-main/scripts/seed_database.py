@@ -1,21 +1,20 @@
 """
 MongoDB catalog seed for Volta Electronics (real-style product photos).
 
-  python scripts/seed_database.py
-      Refresh products from CATALOG (+101 expansion SKUs). Purchases/ratings unchanged unless flags below.
+Full refresh (deletes ALL products, then inserts ~200 from CATALOG):
 
-  python scripts/seed_database.py --demo-purchases
-      Also replace purchases with the older short synthetic demo.
+  npm run db:seed              # products only, Wikimedia HTTPS imgSrc
+  npm run db:seed:rich         # products + synthetic purchases + sparse ratings + star sync
 
-  python scripts/seed_database.py --rich-demo
-      Replace purchases + productratings with dense demo: ~280 synthetic users averaging ~17 purchases each,
-      sparse ratings (about 28% of purchased pairs), then sync products.ratingAvg/reviews.
+Maintenance (safe-ish):
 
-  python scripts/seed_database.py --skip-image-download
-      Skip downloading files into public/catalog (Mongo imgSrc uses Wikimedia HTTPS URLs — best for Vercel).
+  npm run db:sync:images       # reset imgSrc/fileKey from seed for SKUs that exist in CATALOG (fixes picsum damage)
+  npm run db:sync:stars        # recompute ratingAvg/reviews from productratings only
 
 Requires MONGO_URI in .env.local.
-Warning: Re-seeding calls products.delete_many({}) — take an Atlas backup first if needed.
+Warning: Full seed calls products.delete_many({}). Take an Atlas backup first if needed.
+
+Do NOT run scripts/add_catalog_users_activity.cjs against production — it overwrites product images with picsum.photos.
 """
 from __future__ import annotations
 
@@ -736,10 +735,42 @@ def purchase_weight(prod_id: str) -> float:
     return 4.5
 
 
+def random_purchase_created_at(now: datetime, rng: random.Random) -> datetime:
+    """Spread timestamps across sub-day resolution so rows are not all identical."""
+    return now - timedelta(
+        days=rng.randint(0, 380),
+        hours=rng.randint(0, 23),
+        minutes=rng.randint(0, 59),
+        seconds=rng.randint(0, 59),
+        microseconds=rng.randint(0, 999_999),
+    )
+
+
+MIN_REGISTERED_USERS_FOR_RICH_DEMO = 3
+SYNTHETIC_RICH_DEMO_USERS = 280
+
+
+def collect_registered_user_emails(db) -> list[str]:
+    """Emails from the storefront User collection (matches Purchase.userId / admin Transactions)."""
+    seen: set[str] = set()
+    out: list[str] = []
+    for doc in db["users"].find({}, {"email": 1}):
+        raw = doc.get("email")
+        if not raw:
+            continue
+        em = str(raw).strip().lower()
+        if not em or em == "anonymous":
+            continue
+        if em not in seen:
+            seen.add(em)
+            out.append(em)
+    return out
+
+
 def build_rich_purchases(
     prod_ids: list[str],
     *,
-    num_users: int = 280,
+    num_users: int = SYNTHETIC_RICH_DEMO_USERS,
     target_avg: float = 17.0,
     rng: random.Random | None = None,
 ) -> list[dict]:
@@ -757,7 +788,33 @@ def build_rich_purchases(
                 {
                     "userId": uid,
                     "prodId": pid,
-                    "createdAt": now - timedelta(days=rng.randint(0, 380)),
+                    "createdAt": random_purchase_created_at(now, rng),
+                }
+            )
+    return rows
+
+
+def build_rich_purchases_from_registered_users(
+    user_emails: list[str],
+    prod_ids: list[str],
+    *,
+    target_avg: float = 17.0,
+    rng: random.Random | None = None,
+) -> list[dict]:
+    """Same volume model as build_rich_purchases but userId is a real account email."""
+    rng = rng or random.Random(42)
+    weights = [purchase_weight(pid) for pid in prod_ids]
+    rows: list[dict] = []
+    now = datetime.now(timezone.utc)
+    for uid in user_emails:
+        n = max(4, min(52, int(rng.gauss(target_avg, 4.5))))
+        picks = rng.choices(prod_ids, weights=weights, k=n)
+        for pid in picks:
+            rows.append(
+                {
+                    "userId": uid,
+                    "prodId": pid,
+                    "createdAt": random_purchase_created_at(now, rng),
                 }
             )
     return rows
@@ -819,7 +876,16 @@ def main() -> None:
     ap.add_argument(
         "--rich-demo",
         action="store_true",
-        help="Replace purchases + productratings with ~280 users (~17 purchases avg), sparse ratings, sync product stars.",
+        help=(
+            "Replace purchases + productratings: uses Mongo users' emails when "
+            f">={MIN_REGISTERED_USERS_FOR_RICH_DEMO} accounts exist; else synthetic_shop_* users. "
+            "Sparse ratings + sync product stars."
+        ),
+    )
+    ap.add_argument(
+        "--rich-demo-synthetic-users",
+        action="store_true",
+        help="With --rich-demo: ignore Mongo users and use synthetic_shop_* IDs (legacy).",
     )
     ap.add_argument(
         "--skip-image-download",
@@ -831,10 +897,59 @@ def main() -> None:
         action="store_true",
         help="Store imgSrc as /catalog/... — requires files under public/catalog.",
     )
+    ap.add_argument(
+        "--sync-img-src-only",
+        action="store_true",
+        help="Only update imgSrc/fileKey from CATALOG for existing prodIds (e.g. undo picsum URLs). Does not add missing SKUs.",
+    )
+    ap.add_argument(
+        "--resync-stars-only",
+        action="store_true",
+        help="Recompute products.ratingAvg and reviews from productratings only.",
+    )
     args = ap.parse_args()
+
+    maint = int(bool(args.sync_img_src_only)) + int(bool(args.resync_stars_only))
+    if maint > 1:
+        print("Use only one of --sync-img-src-only or --resync-stars-only.")
+        sys.exit(1)
+    if maint and (args.rich_demo or args.demo_purchases):
+        print("Maintenance flags cannot be combined with --rich-demo / --demo-purchases.")
+        sys.exit(1)
+
+    if args.sync_img_src_only:
+        db = get_db()
+        matched = 0
+        for item in CATALOG:
+            rel = f"/catalog/{item['file']}"
+            if args.local_img_src:
+                img_src = rel
+                file_key = f"local:{rel}"
+            else:
+                img_src = item["url"]
+                file_key = f"wikimedia:{item['slug']}"
+            res = db["products"].update_one(
+                {"prodId": item["prodId"]},
+                {"$set": {"imgSrc": img_src, "fileKey": file_key}},
+            )
+            if res.matched_count:
+                matched += 1
+        print(
+            f"sync-img-src-only: updated {matched} products (catalog defines {len(CATALOG)} SKUs). "
+            "Run npm run db:seed or db:seed:rich to replace the full catalog if counts are still low."
+        )
+        return
+
+    if args.resync_stars_only:
+        sync_product_rating_fields(get_db())
+        print("Resynced ratingAvg/reviews from productratings.")
+        return
 
     if args.demo_purchases and args.rich_demo:
         print("Use only one of --demo-purchases or --rich-demo.")
+        sys.exit(1)
+    if args.rich_demo_synthetic_users and not args.rich_demo:
+        print("--rich-demo-synthetic-users requires --rich-demo.")
         sys.exit(1)
 
     if not args.skip_image_download:
@@ -879,15 +994,34 @@ def main() -> None:
         db["productratings"].delete_many({})
         all_ids = [p["prodId"] for p in products]
         rng = random.Random(20260509)
-        purch_rows = build_rich_purchases(all_ids, num_users=280, target_avg=17.0, rng=rng)
+        use_synth = args.rich_demo_synthetic_users
+        reg_emails: list[str] = [] if use_synth else collect_registered_user_emails(db)
+        if not use_synth and len(reg_emails) >= MIN_REGISTERED_USERS_FOR_RICH_DEMO:
+            purch_rows = build_rich_purchases_from_registered_users(
+                reg_emails, all_ids, target_avg=17.0, rng=rng
+            )
+            n_accounts = len(reg_emails)
+            mode_note = f"{n_accounts} registered user emails from Mongo"
+        else:
+            purch_rows = build_rich_purchases(
+                all_ids, num_users=SYNTHETIC_RICH_DEMO_USERS, target_avg=17.0, rng=rng
+            )
+            n_accounts = SYNTHETIC_RICH_DEMO_USERS
+            if use_synth:
+                mode_note = f"{SYNTHETIC_RICH_DEMO_USERS} synthetic_shop_* (--rich-demo-synthetic-users)"
+            else:
+                mode_note = (
+                    f"{SYNTHETIC_RICH_DEMO_USERS} synthetic_shop_* "
+                    f"(need >={MIN_REGISTERED_USERS_FOR_RICH_DEMO} users in DB; found {len(reg_emails)})"
+                )
         db["purchases"].insert_many(purch_rows)
-        rating_docs = build_sparse_ratings(purch_rows, rating_probability=0.28, rng=rng)
+        rating_docs = build_sparse_ratings(purch_rows, rating_probability=0.42, rng=rng)
         if rating_docs:
             db["productratings"].insert_many(rating_docs)
         sync_product_rating_fields(db)
-        avg_u = len(purch_rows) / 280
+        avg_u = len(purch_rows) / max(n_accounts, 1)
         msg += (
-            f" Rich demo: {len(purch_rows)} purchases (~{avg_u:.1f} per user), "
+            f" Rich demo ({mode_note}): {len(purch_rows)} purchases (~{avg_u:.1f} per account), "
             f"{len(rating_docs)} sparse ratings in productratings."
         )
     elif args.demo_purchases:

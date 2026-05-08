@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { shouldUseUnoptimizedImage } from "@/utils/imageOptimization";
 import AddToCartButton from "./AddToCartButton";
 
 export type TileProduct = {
@@ -29,6 +30,7 @@ export default function ProductTile({ p }: { p: TileProduct }) {
             src={p.imgSrc}
             alt={p.name}
             fill
+            unoptimized={shouldUseUnoptimizedImage(p.imgSrc)}
             className="object-contain p-4 group-hover:scale-105 transition-transform duration-300"
             sizes="(max-width:768px) 50vw, 25vw"
           />
